@@ -10,10 +10,10 @@ import projekt.substratum.helper.util.Root;
  * @author Nicholas Chum (nicholaschum)
  */
 
-public class Helper extends BroadcastReceiver {
+public class Initializer extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        Root.runCommand(intent.getStringExtra("om-commands"));
+        Root.requestRootAccess();
     }
 }

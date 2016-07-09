@@ -19,6 +19,11 @@
                 <action android:name="projekt.substratum.helper.COMMANDS"/>
             </intent-filter>
         </receiver>
+        <receiver android:name=".services.Initializer">
+            <intent-filter>
+                <action android:name="projekt.substratum.helper.INITIALIZE"/>
+            </intent-filter>
+        </receiver>
 
         <activity android:name=".activities.MainActivity">
             <intent-filter>

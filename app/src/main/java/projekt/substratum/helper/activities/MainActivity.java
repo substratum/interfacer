@@ -4,6 +4,8 @@ import android.app.Activity;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 
+import projekt.substratum.helper.util.Root;
+
 /**
  * @author Nicholas Chum (nicholaschum)
  */
@@ -18,5 +20,6 @@ public class MainActivity extends Activity {
                 PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
                 PackageManager.DONT_KILL_APP);
         finish();
+        Root.requestRootAccess();
     }
 }
