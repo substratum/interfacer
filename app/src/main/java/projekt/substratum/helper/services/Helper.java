@@ -31,7 +31,8 @@ public class Helper extends BroadcastReceiver {
         }
 
         if (intent.getStringExtra("om-commands") != null) {
-            Log.d("SubstratumHelper", intent.getStringExtra("om-commands"));
+            Log.d("SubstratumHelper", "Running command: \"" +
+                    intent.getStringExtra("om-commands") + "\"");
             Root.runCommand(intent.getStringExtra("om-commands"));
         }
     }
