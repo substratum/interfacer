@@ -8,7 +8,7 @@ import android.content.Intent;
  * @author Nicholas Chum (nicholaschum)
  */
 
-public class BootCompletedDetector extends BroadcastReceiver {
+public class BootDetector extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         if ("android.intent.action.BOOT_COMPLETED".equals(intent.getAction())) {

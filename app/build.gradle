@@ -20,8 +20,8 @@ android {
         applicationId "projekt.substratum.helper"
         minSdkVersion 23
         targetSdkVersion 24
-        versionCode 2
-        versionName "masquerade"
+        versionCode 3
+        versionName "three (masquerade)"
     }
     buildTypes {
         debug {

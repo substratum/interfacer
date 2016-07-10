@@ -1,6 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
           package="projekt.substratum.helper">
 
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
 
     <application
@@ -9,7 +11,7 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <receiver android:name=".services.BootCompletedDetector">
+        <receiver android:name=".services.BootDetector">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED"/>
             </intent-filter>
@@ -17,11 +19,6 @@
         <receiver android:name=".services.Helper">
             <intent-filter>
                 <action android:name="projekt.substratum.helper.COMMANDS"/>
-            </intent-filter>
-        </receiver>
-        <receiver android:name=".services.Initializer">
-            <intent-filter>
-                <action android:name="projekt.substratum.helper.INITIALIZE"/>
             </intent-filter>
         </receiver>
 
