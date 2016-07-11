@@ -12,12 +12,12 @@ android {
     applicationVariants.all { variant ->
         variant.outputs.each { output ->
             output.outputFile = new File(
-                    output.outputFile.parent, "substratumhelper_beta_testers" + versionCode + ".apk")
+                    output.outputFile.parent, "masquerade_beta_testers" + versionCode + ".apk")
         }
     }
 
     defaultConfig {
-        applicationId "projekt.substratum.helper"
+        applicationId "masquerade.substratum"
         minSdkVersion 23
         targetSdkVersion 24
         versionCode 3

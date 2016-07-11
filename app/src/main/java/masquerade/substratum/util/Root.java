@@ -1,4 +1,4 @@
-package projekt.substratum.helper.util;
+package masquerade.substratum.util;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;

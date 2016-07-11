@@ -1,6 +1,4 @@
-package projekt.substratum.helper.util;
-
-import android.util.Log;
+package masquerade.substratum.util;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -30,8 +28,7 @@ public class ReadOverlaysFile {
                 }
             }
         } catch (IOException ioe) {
-            ioe.printStackTrace();
-            Log.e("SubstratumLogger", "Unable to load XML file correctly.");
+            // Exception
         }
         return list;
     }

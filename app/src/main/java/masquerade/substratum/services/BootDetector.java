@@ -1,4 +1,4 @@
-package projekt.substratum.helper.services;
+package masquerade.substratum.services;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
