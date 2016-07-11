@@ -52,9 +52,9 @@ public class Helper extends BroadcastReceiver {
             String final_commands_uninstall = "";
 
             Root.runCommand(
-                    "pm grant projekt.substratum.helper android.permission.READ_EXTERNAL_STORAGE");
+                    "pm grant masquerade.substratum android.permission.READ_EXTERNAL_STORAGE");
             Root.runCommand(
-                    "pm grant projekt.substratum.helper android.permission.WRITE_EXTERNAL_STORAGE");
+                    "pm grant masquerade.substratum android.permission.WRITE_EXTERNAL_STORAGE");
 
             ArrayList<String> packages_to_uninstall =
                     new ArrayList<>(intent.getStringArrayListExtra(inheritor));
@@ -66,8 +66,8 @@ public class Helper extends BroadcastReceiver {
                         .getExternalStorageDirectory().getAbsolutePath() +
                         "/.substratum/current_overlays.xml");
             }
-            Root.runCommand("cp /data/system/overlays" +
-                    ".xml " + Environment.getExternalStorageDirectory().getAbsolutePath() +
+            Root.runCommand("cp /data/system/overlays.xml " +
+                    Environment.getExternalStorageDirectory().getAbsolutePath() +
                     "/.substratum/current_overlays.xml");
             String[] state5initial = {Environment.getExternalStorageDirectory().getAbsolutePath() +
                     "/.substratum/current_overlays.xml", "5"};

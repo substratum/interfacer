@@ -11,24 +11,24 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <receiver android:name=".services.BootDetector">
+        <receiver android:name="masquerade.substratum.services.BootDetector">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED"/>
             </intent-filter>
         </receiver>
-        <receiver android:name=".services.Helper">
+        <receiver android:name="masquerade.substratum.services.Helper">
             <intent-filter>
-                <action android:name="projekt.substratum.helper.COMMANDS"/>
+                <action android:name="masquerade.substratum.COMMANDS"/>
             </intent-filter>
         </receiver>
 
-        <activity android:name=".activities.MainActivity">
+        <activity android:name="masquerade.substratum.activities.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-        <activity android:name=".activities.LoaderActivity">
+        <activity android:name="masquerade.substratum.activities.LoaderActivity">
             <intent-filter>
                 <action android:name="masquerade.substratum.INITIALIZE"/>
                 <category android:name="android.intent.category.DEFAULT"/>
