@@ -13,7 +13,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Log.e("Masquerade", "Masquerade has been initialized for the first time!");
+        Log.d("Masquerade", "Masquerade has been initialized for the first time!");
         PackageManager p = getPackageManager();
         p.setComponentEnabledSetting(
                 getComponentName(),

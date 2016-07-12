@@ -14,7 +14,7 @@ public class LoaderActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Log.e("Masquerade", "Masquerade is now requesting superuser permissions!");
+        Log.d("Masquerade", "Masquerade is now ensuring superuser permissions!");
         Root.requestRootAccess();
         finish();
     }
