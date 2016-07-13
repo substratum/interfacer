@@ -33,8 +33,11 @@ public class Helper extends BroadcastReceiver {
                 runCommand.addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES);
                 runCommand.setAction("projekt.substratum.MASQUERADE_BALL");
                 runCommand.putExtra("substratum-check", "masquerade-ball");
-                Log.e("runIntent", runCommand.toString());
                 context.sendBroadcast(runCommand);
+                Log.d("Masquerade",
+                        "BroadcastReceiver was triggered to check for system integrity and " +
+                                "service activation.");
+
             }
         }
 
