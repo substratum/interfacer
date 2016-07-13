@@ -27,6 +27,17 @@ public class Helper extends BroadcastReceiver {
                 "BroadcastReceiver has accepted Substratum's commands and is running now...");
         Root.requestRootAccess();
 
+        if (intent.getStringExtra("substratum-check") != null) {
+            if (intent.getStringExtra("substratum-check").equals("masquerade-ball")) {
+                Intent runCommand = new Intent();
+                runCommand.addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES);
+                runCommand.setAction("projekt.substratum.MASQUERADE_BALL");
+                runCommand.putExtra("substratum-check", "masquerade-ball");
+                Log.e("runIntent", runCommand.toString());
+                context.sendBroadcast(runCommand);
+            }
+        }
+
         if (intent.getStringArrayListExtra("pm-uninstall") != null) {
             uninstall_handler(intent, "pm-uninstall", false);
         }
