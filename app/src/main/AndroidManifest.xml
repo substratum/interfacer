@@ -16,7 +16,7 @@
                 <action android:name="android.intent.action.BOOT_COMPLETED"/>
             </intent-filter>
         </receiver>
-        <receiver android:name="masquerade.substratum.services.Helper">
+        <receiver android:name=".util.Helper">
             <intent-filter>
                 <action android:name="masquerade.substratum.COMMANDS"/>
             </intent-filter>
