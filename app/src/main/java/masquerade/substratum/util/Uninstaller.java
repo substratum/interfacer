@@ -46,17 +46,6 @@ public class Uninstaller {
 
                 ArrayList<String> packages_to_uninstall =
                         new ArrayList<>(intent.getStringArrayListExtra(inheritor));
-                File current_overlays = new File(Environment
-                        .getExternalStorageDirectory().getAbsolutePath() +
-                        "/.substratum/current_overlays.xml");
-                if (current_overlays.exists()) {
-                    Root.runCommand("rm " + Environment
-                            .getExternalStorageDirectory().getAbsolutePath() +
-                            "/.substratum/current_overlays.xml");
-                }
-                Root.runCommand("cp /data/system/overlays.xml " +
-                        Environment.getExternalStorageDirectory().getAbsolutePath() +
-                        "/.substratum/current_overlays.xml");
                 String[] state5initial = {Environment.getExternalStorageDirectory()
                         .getAbsolutePath() +
                         "/.substratum/current_overlays.xml", "5"};
