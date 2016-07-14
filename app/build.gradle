@@ -34,4 +34,8 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+
+    dependencies {
+        testCompile 'junit:junit:4.12'
+    }
 }
