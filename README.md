@@ -1,4 +1,6 @@
 # masquerade
+[![Build Status](https://travis-ci.org/nicholaschum/masquerade.svg?branch=master)](https://travis-ci.org/nicholaschum/masquerade)
+
 Masquerade is Substratum's background service that runs functions that should run on a completely separate thread. This alleviates the stress on the main app and allows for Substratum to run more smoothly.
 
 # How to add to ROM builds
