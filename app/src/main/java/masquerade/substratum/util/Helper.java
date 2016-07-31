@@ -28,9 +28,11 @@ public class Helper extends BroadcastReceiver {
                         "integrity and service activation.");
             }
         } else if (intent.getStringArrayListExtra("pm-uninstall") != null) {
-            new Uninstaller().Uninstaller(intent, "pm-uninstall", false);
+            new Uninstaller().Uninstaller(intent, "pm-uninstall", false,
+                    intent.getBooleanExtra("restart_systemui", false));
         } else if (intent.getStringArrayListExtra("pm-uninstall-specific") != null) {
-            new Uninstaller().Uninstaller(intent, "pm-uninstall-specific", true);
+            new Uninstaller().Uninstaller(intent, "pm-uninstall-specific", true,
+                    intent.getBooleanExtra("restart_systemui", false));
         } else if (intent.getStringExtra("om-commands") != null) {
             Log.d("Masquerade", "Running command: \"" +
                     intent.getStringExtra("om-commands") + "\"");

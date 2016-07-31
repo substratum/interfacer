@@ -5,7 +5,6 @@ import android.os.AsyncTask;
 import android.os.Environment;
 import android.util.Log;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,12 +16,15 @@ public class Uninstaller {
 
     private Intent mIntent;
     private String uninstallString;
-    private Boolean specific;
+    private boolean specific;
+    private boolean restartSystemUI;
 
-    public void Uninstaller(Intent mIntent, String uninstallString, Boolean specific) {
+    public void Uninstaller(Intent mIntent, String uninstallString,
+                            boolean specific, boolean restartSystemUI) {
         this.mIntent = mIntent;
         this.uninstallString = uninstallString;
         this.specific = specific;
+        this.restartSystemUI = restartSystemUI;
         new UninstallAsync().execute("");
     }
 
@@ -30,11 +32,12 @@ public class Uninstaller {
 
         @Override
         protected String doInBackground(String... sUrl) {
-            uninstall_handler(mIntent, uninstallString, specific);
+            uninstall_handler(mIntent, uninstallString, specific, restartSystemUI);
             return null;
         }
 
-        private void uninstall_handler(Intent intent, String inheritor, boolean specific) {
+        private void uninstall_handler(Intent intent, String inheritor,
+                                       boolean specific, boolean restartSystemUI) {
             try {
                 String final_commands_disable = "";
                 String final_commands_uninstall = "";
@@ -86,6 +89,10 @@ public class Uninstaller {
                 if (final_commands_uninstall.length() > 0) {
                     Log.d("Masquerade", "Uninstall commands: " + final_commands_uninstall);
                     Root.runCommand(final_commands_uninstall);
+                }
+
+                if (restartSystemUI) {
+                    Root.runCommand("pkill com.android.systemui");
                 }
 
                 if (!specific) {
