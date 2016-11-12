@@ -20,8 +20,8 @@ android {
         applicationId "masquerade.substratum"
         minSdkVersion 21
         targetSdkVersion 23
-        versionCode 14
-        versionName "fourteen"
+        versionCode 15
+        versionName "fifteen"
     }
 
     buildTypes {

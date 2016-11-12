@@ -6,10 +6,6 @@ import android.content.Intent;
 
 import masquerade.substratum.util.Helper;
 
-/**
- * @author Nicholas Chum (nicholaschum)
- */
-
 public class BootDetector extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {

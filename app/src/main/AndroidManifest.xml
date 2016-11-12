@@ -1,7 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
           package="masquerade.substratum"
-          android:versionCode="14"
-          android:versionName="fourteen">
+          android:versionCode="15"
+          android:versionName="fifteen">
 
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
@@ -17,6 +17,12 @@
         <receiver android:name="masquerade.substratum.services.BootDetector">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED"/>
+            </intent-filter>
+        </receiver>
+        <receiver android:name=".services.UninstallDetector">
+            <intent-filter>
+                <action android:name="android.intent.action.PACKAGE_REMOVED"/>
+                <data android:scheme="package"/>
             </intent-filter>
         </receiver>
         <receiver android:name=".util.Helper">

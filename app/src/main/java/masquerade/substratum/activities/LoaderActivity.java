@@ -6,10 +6,6 @@ import android.util.Log;
 
 import masquerade.substratum.util.Root;
 
-/**
- * @author Nicholas Chum (nicholaschum)
- */
-
 public class LoaderActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {

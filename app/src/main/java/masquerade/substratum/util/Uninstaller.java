@@ -8,19 +8,15 @@ import android.util.Log;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * @author Nicholas Chum (nicholaschum)
- */
-
-public class Uninstaller {
+class Uninstaller {
 
     private Intent mIntent;
     private String uninstallString;
     private boolean specific;
     private boolean restartSystemUI;
 
-    public void Uninstaller(Intent mIntent, String uninstallString,
-                            boolean specific, boolean restartSystemUI) {
+    void uninstall(Intent mIntent, String uninstallString,
+                   boolean specific, boolean restartSystemUI) {
         this.mIntent = mIntent;
         this.uninstallString = uninstallString;
         this.specific = specific;

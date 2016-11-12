@@ -5,10 +5,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
 
-/**
- * @author Nicholas Chum (nicholaschum)
- */
-
 public class Helper extends BroadcastReceiver {
 
     @Override
@@ -28,15 +24,19 @@ public class Helper extends BroadcastReceiver {
                         "integrity and service activation.");
             }
         } else if (intent.getStringArrayListExtra("pm-uninstall") != null) {
-            new Uninstaller().Uninstaller(intent, "pm-uninstall", false,
+            new Uninstaller().uninstall(intent, "pm-uninstall", false,
                     intent.getBooleanExtra("restart_systemui", false));
         } else if (intent.getStringArrayListExtra("pm-uninstall-specific") != null) {
-            new Uninstaller().Uninstaller(intent, "pm-uninstall-specific", true,
+            new Uninstaller().uninstall(intent, "pm-uninstall-specific", true,
                     intent.getBooleanExtra("restart_systemui", false));
         } else if (intent.getStringExtra("om-commands") != null) {
-            Log.d("Masquerade", "Running command: \"" +
-                    intent.getStringExtra("om-commands") + "\"");
-            Root.runCommand(intent.getStringExtra("om-commands"));
+            if (intent.getStringExtra("om-commands").contains("pm") ||
+                    intent.getStringExtra("om-commands").contains("om") ||
+                    intent.getStringExtra("om-commands").contains("overlay")) {
+                Log.d("Masquerade", "Running command: \"" +
+                        intent.getStringExtra("om-commands") + "\"");
+                Root.runCommand(intent.getStringExtra("om-commands"));
+            }
         }
     }
 }

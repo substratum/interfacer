@@ -9,10 +9,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * @author Nicholas Chum (nicholaschum)
- */
-
 public class ReadOverlaysFile {
 
     public static List<String> main(String argv[]) {
