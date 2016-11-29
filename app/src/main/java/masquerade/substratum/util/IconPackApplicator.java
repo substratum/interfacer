@@ -111,7 +111,7 @@ class IconPackApplicator {
                                     // Suppress warning
                                 }
                             }
-                        }, 500); // 2 second delay for Home refresh
+                        }, 1000); // 2 second delay for Home refresh
                     } catch (Exception e) {
                         // Suppress warning
                     }
