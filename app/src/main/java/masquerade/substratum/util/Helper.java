@@ -29,6 +29,16 @@ public class Helper extends BroadcastReceiver {
         } else if (intent.getStringArrayListExtra("pm-uninstall-specific") != null) {
             new Uninstaller().uninstall(intent, "pm-uninstall-specific", true,
                     intent.getBooleanExtra("restart_systemui", false));
+        } else if (intent.getStringArrayListExtra("icon-handler") != null) {
+            String icon_pack_name = intent.getStringArrayListExtra("icon-handler").get(0);
+            if (intent.getStringArrayListExtra("icon-handler").get(1).contains("pm") ||
+                    intent.getStringArrayListExtra("icon-handler").get(1).contains("om") ||
+                    intent.getStringArrayListExtra("icon-handler").get(1).contains("overlay")) {
+                Log.d("Masquerade", "Running command: \"" +
+                        intent.getStringArrayListExtra("icon-handler").get(1) + "\"");
+                Root.runCommand(intent.getStringArrayListExtra("icon-handler").get(1));
+            }
+            new IconPackApplicator().apply(context, icon_pack_name);
         } else if (intent.getStringExtra("om-commands") != null) {
             if (intent.getStringExtra("om-commands").contains("pm") ||
                     intent.getStringExtra("om-commands").contains("om") ||
