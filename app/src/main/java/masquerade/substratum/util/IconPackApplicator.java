@@ -116,7 +116,7 @@ class IconPackApplicator {
                                             android.content.res.Configuration
                                                     .class).invoke(am, config);
 
-                                    if (toast_text != null && !bypass)
+                                    if (toast_text != null)
                                         Toast.makeText(
                                                 mContext, toast_text, Toast.LENGTH_SHORT).show();
                                 } catch (Exception e) {
