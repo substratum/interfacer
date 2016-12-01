@@ -35,12 +35,15 @@ public class Helper extends BroadcastReceiver {
             String main_delay = intent.getStringArrayListExtra("icon-handler").get(2);
             String delay_one = intent.getStringArrayListExtra("icon-handler").get(3);
             String delay_two = intent.getStringArrayListExtra("icon-handler").get(4);
-            if (intent.getStringArrayListExtra("icon-handler").get(1).contains("pm") ||
-                    intent.getStringArrayListExtra("icon-handler").get(1).contains("om") ||
-                    intent.getStringArrayListExtra("icon-handler").get(1).contains("overlay")) {
-                Log.d("Masquerade", "Running command: \"" +
-                        intent.getStringArrayListExtra("icon-handler").get(1) + "\"");
-                Root.runCommand(intent.getStringArrayListExtra("icon-handler").get(1));
+            String bypass = intent.getStringArrayListExtra("icon-handler").get(5);
+            if (bypass == null) {
+                if (intent.getStringArrayListExtra("icon-handler").get(1).contains("pm") ||
+                        intent.getStringArrayListExtra("icon-handler").get(1).contains("om") ||
+                        intent.getStringArrayListExtra("icon-handler").get(1).contains("overlay")) {
+                    Log.d("Masquerade", "Running command: \"" +
+                            intent.getStringArrayListExtra("icon-handler").get(1) + "\"");
+                    Root.runCommand(intent.getStringArrayListExtra("icon-handler").get(1));
+                }
             }
             final Context mContext = context;
             final String icon_pack = icon_pack_name;
