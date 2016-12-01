@@ -16,16 +16,19 @@ class IconPackApplicator {
     private String iconPackName;
     private String toast_text = null;
     private int delayOne, delayTwo;
+    private Boolean bypass;
 
     private static void grantPermission(final String packager, final String permission) {
         Root.runCommand("pm grant " + packager + " " + permission);
     }
 
-    void apply(Context mContext, String iconPackName, String delayOne, String delayTwo) {
+    void apply(Context mContext, String iconPackName, String delayOne, String delayTwo,
+               Boolean bypass) {
         this.mContext = mContext;
         this.iconPackName = iconPackName;
         this.delayOne = Integer.parseInt(delayOne);
         this.delayTwo = Integer.parseInt(delayTwo);
+        this.bypass = bypass;
         iconInjector();
     }
 
@@ -71,9 +74,15 @@ class IconPackApplicator {
             try {
                 Context otherContext = mContext.createPackageContext("projekt.substratum", 0);
                 Resources resources = otherContext.getResources();
-                int toast = resources.getIdentifier("studio_applied_toast", "string",
-                        "projekt.substratum");
-                toast_text = String.format(resources.getString(toast), iconPackName);
+                if (bypass) {
+                    int toast = resources.getIdentifier("studio_applied_toast", "string",
+                            "projekt.substratum");
+                    toast_text = String.format(resources.getString(toast), iconPackName);
+                } else {
+                    int toast = resources.getIdentifier("studio_configuration_changed", "string",
+                            "projekt.substratum");
+                    toast_text = resources.getString(toast);
+                }
             } catch (Exception e) {
                 // Suppress warning
             }
@@ -107,7 +116,7 @@ class IconPackApplicator {
                                             android.content.res.Configuration
                                                     .class).invoke(am, config);
 
-                                    if (toast_text != null)
+                                    if (toast_text != null && !bypass)
                                         Toast.makeText(
                                                 mContext, toast_text, Toast.LENGTH_SHORT).show();
                                 } catch (Exception e) {

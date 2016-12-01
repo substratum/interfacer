@@ -35,7 +35,7 @@ public class Helper extends BroadcastReceiver {
             String main_delay = intent.getStringArrayListExtra("icon-handler").get(2);
             String delay_one = intent.getStringArrayListExtra("icon-handler").get(3);
             String delay_two = intent.getStringArrayListExtra("icon-handler").get(4);
-            String bypass = intent.getStringArrayListExtra("icon-handler").get(5);
+            final String bypass = intent.getStringArrayListExtra("icon-handler").get(5);
             if (bypass == null) {
                 if (intent.getStringArrayListExtra("icon-handler").get(1).contains("pm") ||
                         intent.getStringArrayListExtra("icon-handler").get(1).contains("om") ||
@@ -54,7 +54,7 @@ public class Helper extends BroadcastReceiver {
                 @Override
                 public void run() {
                     new IconPackApplicator().apply(
-                            mContext, icon_pack, delay_one_time, delay_two_time);
+                            mContext, icon_pack, delay_one_time, delay_two_time, bypass == null);
                 }
             }, Integer.parseInt(main_delay));
         } else if (intent.getStringExtra("om-commands") != null) {
