@@ -3,6 +3,7 @@ package masquerade.substratum.util;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Handler;
 import android.util.Log;
 
 public class Helper extends BroadcastReceiver {
@@ -31,6 +32,9 @@ public class Helper extends BroadcastReceiver {
                     intent.getBooleanExtra("restart_systemui", false));
         } else if (intent.getStringArrayListExtra("icon-handler") != null) {
             String icon_pack_name = intent.getStringArrayListExtra("icon-handler").get(0);
+            String main_delay = intent.getStringArrayListExtra("icon-handler").get(2);
+            String delay_one = intent.getStringArrayListExtra("icon-handler").get(3);
+            String delay_two = intent.getStringArrayListExtra("icon-handler").get(4);
             if (intent.getStringArrayListExtra("icon-handler").get(1).contains("pm") ||
                     intent.getStringArrayListExtra("icon-handler").get(1).contains("om") ||
                     intent.getStringArrayListExtra("icon-handler").get(1).contains("overlay")) {
@@ -38,7 +42,18 @@ public class Helper extends BroadcastReceiver {
                         intent.getStringArrayListExtra("icon-handler").get(1) + "\"");
                 Root.runCommand(intent.getStringArrayListExtra("icon-handler").get(1));
             }
-            new IconPackApplicator().apply(context, icon_pack_name);
+            final Context mContext = context;
+            final String icon_pack = icon_pack_name;
+            final String delay_one_time = delay_one;
+            final String delay_two_time = delay_two;
+            final Handler handle = new Handler();
+            handle.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    new IconPackApplicator().apply(
+                            mContext, icon_pack, delay_one_time, delay_two_time);
+                }
+            }, Integer.parseInt(main_delay));
         } else if (intent.getStringExtra("om-commands") != null) {
             if (intent.getStringExtra("om-commands").contains("pm") ||
                     intent.getStringExtra("om-commands").contains("om") ||

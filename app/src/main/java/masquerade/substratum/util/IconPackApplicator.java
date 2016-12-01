@@ -15,14 +15,17 @@ class IconPackApplicator {
     private Context mContext;
     private String iconPackName;
     private String toast_text = null;
+    private int delayOne, delayTwo;
 
     private static void grantPermission(final String packager, final String permission) {
         Root.runCommand("pm grant " + packager + " " + permission);
     }
 
-    void apply(Context mContext, String iconPackName) {
+    void apply(Context mContext, String iconPackName, String delayOne, String delayTwo) {
         this.mContext = mContext;
         this.iconPackName = iconPackName;
+        this.delayOne = Integer.parseInt(delayOne);
+        this.delayTwo = Integer.parseInt(delayTwo);
         iconInjector();
     }
 
@@ -111,12 +114,12 @@ class IconPackApplicator {
                                     // Suppress warning
                                 }
                             }
-                        }, 1000); // 2 second delay for Home refresh
+                        }, delayTwo); // 2 second delay for Home refresh
                     } catch (Exception e) {
                         // Suppress warning
                     }
                 }
-            }, 1000); // 1 second delay for Home refresh
+            }, delayOne); // 1 second delay for Home refresh
         } catch (Exception e) {
             e.printStackTrace();
         }
