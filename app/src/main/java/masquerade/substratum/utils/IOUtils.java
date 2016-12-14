@@ -1,0 +1,170 @@
+
+package masquerade.substratum.utils;
+
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+
+import android.os.FileUtils;
+
+public class IOUtils {
+    public static final String SYSTEM_THEME_PATH = "/data/system/theme";
+    public static final String SYSTEM_THEME_FONT_PATH = SYSTEM_THEME_PATH + File.separator
+            + "fonts";
+    public static final String SYSTEM_THEME_AUDIO_PATH = SYSTEM_THEME_PATH + File.separator
+            + "audio";
+    public static final String SYSTEM_THEME_RINGTONE_PATH = SYSTEM_THEME_AUDIO_PATH
+            + File.separator + "ringtones";
+    public static final String SYSTEM_THEME_NOTIFICATION_PATH = SYSTEM_THEME_AUDIO_PATH
+            + File.separator + "notifications";
+    public static final String SYSTEM_THEME_ALARM_PATH = SYSTEM_THEME_AUDIO_PATH
+            + File.separator + "alarms";
+    public static final String SYSTEM_THEME_UI_SOUNDS_PATH = SYSTEM_THEME_AUDIO_PATH
+            + File.separator + "ui";
+    public static final String SYSTEM_THEME_BOOTANIMATION_PATH = SYSTEM_THEME_PATH + File.separator
+            + "bootanimation.zip";
+
+    public static boolean dirExists(String dirPath) {
+        final File dir = new File(dirPath);
+        return dir.exists() && dir.isDirectory();
+    }
+
+    public static void createDirIfNotExists(String dirPath) {
+        if (!dirExists(dirPath)) {
+            File dir = new File(dirPath);
+            if (dir.mkdir()) {
+                FileUtils.setPermissions(dir, FileUtils.S_IRWXU |
+                        FileUtils.S_IRWXG | FileUtils.S_IROTH | FileUtils.S_IXOTH, -1, -1);
+            }
+        }
+    }
+
+    public static void createFontDirIfNotExists() {
+        createDirIfNotExists(SYSTEM_THEME_FONT_PATH);
+    }
+
+    public static void createAudioDirIfNotExists() {
+        createDirIfNotExists(SYSTEM_THEME_AUDIO_PATH);
+    }
+
+    public static void createRingtoneDirIfNotExists() {
+        createDirIfNotExists(SYSTEM_THEME_RINGTONE_PATH);
+    }
+
+    public static void createNotificationDirIfNotExists() {
+        createDirIfNotExists(SYSTEM_THEME_NOTIFICATION_PATH);
+    }
+
+    public static void createAlarmDirIfNotExists() {
+        createDirIfNotExists(SYSTEM_THEME_ALARM_PATH);
+    }
+
+    public static void createUiSoundsDirIfNotExists() {
+        createDirIfNotExists(SYSTEM_THEME_UI_SOUNDS_PATH);
+    }
+
+    public static void deleteThemedFonts() {
+        try {
+            deleteRecursive(new File(SYSTEM_THEME_FONT_PATH));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    
+    public static void deleteThemedAudio() {
+        try {
+            deleteRecursive(new File(SYSTEM_THEME_UI_SOUNDS_PATH));
+            deleteRecursive(new File(SYSTEM_THEME_RINGTONE_PATH));
+            deleteRecursive(new File(SYSTEM_THEME_NOTIFICATION_PATH));
+            deleteRecursive(new File(SYSTEM_THEME_ALARM_PATH));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void copyFolder(String source, String dest) {
+        File dir = new File(source);
+        File[] files = dir.listFiles();
+        for (File file : files) {
+            try {
+                String sourceFile = dir + File.separator + file.getName();
+                String destinationFile = dest + File.separator + file.getName();
+                bufferedCopy(new File(sourceFile), new File(destinationFile));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public static void unzip(String source, String destination) {
+        try (ZipInputStream inputStream = new ZipInputStream(
+                new BufferedInputStream(new FileInputStream(source)))) {
+            ZipEntry zipEntry;
+            int count;
+            byte[] buffer = new byte[8192];
+            while ((zipEntry = inputStream.getNextEntry()) != null) {
+                File file = new File(destination, zipEntry.getName());
+                File dir = zipEntry.isDirectory() ? file : file.getParentFile();
+                if (!dir.isDirectory() && !dir.mkdirs())
+                    throw new FileNotFoundException("Failed to ensure directory: " +
+                            dir.getAbsolutePath());
+                if (zipEntry.isDirectory())
+                    continue;
+                try (FileOutputStream outputStream = new FileOutputStream(file)) {
+                    while ((count = inputStream.read(buffer)) != -1)
+                        outputStream.write(buffer, 0, count);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void bufferedCopy(String source, String dest) {
+        try {
+            bufferedCopy(new FileInputStream(source), new FileOutputStream(dest));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void bufferedCopy(File source, File dest) {
+        try {
+            bufferedCopy(new FileInputStream(source), new FileOutputStream(dest));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void bufferedCopy(InputStream source, OutputStream dest) {
+        try {
+            BufferedInputStream in = new BufferedInputStream(source);
+            BufferedOutputStream out = new BufferedOutputStream(dest);
+            byte[] buff = new byte[32 * 1024];
+            int len;
+            while ((len = in.read(buff)) > 0) {
+                out.write(buff, 0, len);
+            }
+            in.close();
+            out.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void deleteRecursive(File fileOrDirectory) {
+        if (fileOrDirectory.isDirectory())
+            for (File child : fileOrDirectory.listFiles())
+                deleteRecursive(child);
+
+        fileOrDirectory.delete();
+    }
+
+}

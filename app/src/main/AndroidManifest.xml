@@ -1,12 +1,20 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
           package="masquerade.substratum"
-          android:versionCode="20"
-          android:versionName="twenty - procyon">
+          android:versionCode="21"
+          android:versionName="twentyone - something"
+          coreApp="true"
+          android:sharedUserId="android.uid.system">
 
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <uses-permission android:name="android.permission.CHANGE_CONFIGURATION"/>
+    <uses-permission android:name="android.permission.INTERACT_ACROSS_USERS_FULL" />
+    <uses-permission android:name="android.permission.FORCE_STOP_PACKAGES"/>
+    <uses-permission android:name="android.permission.DELETE_PACKAGES"/>
+    <uses-permission android:name="android.permission.INSTALL_PACKAGES"/>
+    <uses-permission android:name="android.permission.INSTALL_GRANT_RUNTIME_PERMISSIONS"/>
+    <uses-permission android:name="android.permission.MODIFY_OVERLAYS"/>
 
     <application
         android:allowBackup="true"
@@ -14,30 +22,19 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <receiver android:name="masquerade.substratum.services.BootDetector">
+        <receiver android:name=".receivers.BootReceiver">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED"/>
             </intent-filter>
         </receiver>
-        <receiver android:name=".services.UninstallDetector">
+        <receiver android:name=".receivers.UninstallReceiver">
             <intent-filter>
                 <action android:name="android.intent.action.PACKAGE_REMOVED"/>
                 <data android:scheme="package"/>
             </intent-filter>
         </receiver>
-        <receiver android:name=".util.Helper">
-            <intent-filter>
-                <action android:name="masquerade.substratum.COMMANDS"/>
-            </intent-filter>
-        </receiver>
-
-        <activity android:name="masquerade.substratum.activities.LoaderActivity">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <action android:name="masquerade.substratum.INITIALIZE"/>
-
-                <category android:name="android.intent.category.DEFAULT"/>
-            </intent-filter>
-        </activity>
+        <service android:name=".services.JobService"
+            android:exported="true"
+            android:permission="android.permission.MODIFY_OVERLAYS" />
     </application>
 </manifest>

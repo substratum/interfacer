@@ -1,4 +1,4 @@
-package masquerade.substratum.services;
+package masquerade.substratum.receivers;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -11,20 +11,18 @@ import android.util.Log;
 import java.util.ArrayList;
 import java.util.List;
 
-import masquerade.substratum.util.ReadOverlaysFile;
-import masquerade.substratum.util.Root;
 
-public class UninstallDetector extends BroadcastReceiver {
+public class UninstallReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         if ("android.intent.action.PACKAGE_REMOVED".equals(intent.getAction())) {
             Uri packageName = intent.getData();
             if (packageName.toString().substring(8).equals("projekt.substratum")) {
-                new performUninstalls().execute("");
+//                new performUninstalls().execute("");
             }
         }
     }
-
+/*
     public class performUninstalls extends AsyncTask<String, Integer, String> {
         @Override
         protected String doInBackground(String... sUrl) {
@@ -45,4 +43,5 @@ public class UninstallDetector extends BroadcastReceiver {
             return null;
         }
     }
+    */
 }
