@@ -1,15 +1,28 @@
 package masquerade.substratum.util;
 
+import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Handler;
+import android.text.TextUtils;
 import android.util.Log;
 
 public class Helper extends BroadcastReceiver {
 
+    private static final String SUBSTRATUM_PACKAGE = "projekt.substratum";
+    private static final String MASQUERADE_TOKEN = "masquerade_token";
+    private static final String[] AUTHORIZED_CALLERS = new String[]{
+            SUBSTRATUM_PACKAGE,
+            "masquerade.substratum"
+    };
+
     @Override
     public void onReceive(Context context, Intent intent) {
+        if (!isCallerAuthorized(intent)) {
+            Log.d("Masquerade", "Caller not authorized");
+            return;
+        }
         Log.d("Masquerade",
                 "BroadcastReceiver has accepted Substratum's commands and is running now...");
         Root.requestRootAccess();
@@ -66,5 +79,35 @@ public class Helper extends BroadcastReceiver {
                 Root.runCommand(intent.getStringExtra("om-commands"));
             }
         }
+    }
+
+    private boolean isCallerAuthorized(Intent intent) {
+        PendingIntent token = null;
+        try {
+            token = intent.getParcelableExtra(MASQUERADE_TOKEN);
+        } catch (Exception e) {
+            Log.d("Masquerade", "Attempt to start service without a token, unauthorized");
+        }
+        if (token == null) {
+            return false;
+        }
+        // SECOND: we got a token, validate originating package
+        // if not in our white list, return null
+        String callingPackage = token.getCreatorPackage();
+        boolean isValidPackage = false;
+        for (int i = 0; i < AUTHORIZED_CALLERS.length; i++) {
+            if (TextUtils.equals(callingPackage, AUTHORIZED_CALLERS[i])) {
+                Log.d("Masquerade", callingPackage
+                        + " is an authorized calling package, next validate calling package perms");
+                isValidPackage = true;
+                break;
+            }
+        }
+        if (!isValidPackage) {
+            Log.d("Masquerade", callingPackage
+                    + " is not an authorized calling package");
+            return false;
+        }
+        return true;
     }
 }

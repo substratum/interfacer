@@ -21,7 +21,7 @@ android {
         minSdkVersion 21
         targetSdkVersion 23
         versionCode 20
-        versionName "twenty"
+        versionName "twenty - procyon"
     }
 
     buildTypes {
