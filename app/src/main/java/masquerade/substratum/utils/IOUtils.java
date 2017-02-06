@@ -40,8 +40,8 @@ public class IOUtils {
         if (!dirExists(dirPath)) {
             File dir = new File(dirPath);
             if (dir.mkdir()) {
-                FileUtils.setPermissions(dir, FileUtils.S_IRWXU |
-                        FileUtils.S_IRWXG | FileUtils.S_IROTH | FileUtils.S_IXOTH, -1, -1);
+                setPermissions(dir, FileUtils.S_IRWXU | FileUtils.S_IRWXG |
+                        FileUtils.S_IROTH | FileUtils.S_IXOTH);
             }
         }
     }
@@ -77,7 +77,7 @@ public class IOUtils {
             e.printStackTrace();
         }
     }
-    
+
     public static void deleteThemedAudio() {
         try {
             deleteRecursive(new File(SYSTEM_THEME_UI_SOUNDS_PATH));
@@ -89,18 +89,26 @@ public class IOUtils {
         }
     }
 
-    public static void copyFolder(String source, String dest) {
-        File dir = new File(source);
-        File[] files = dir.listFiles();
+    public static void copyFolder(File source, File dest) {
+        if (!dest.exists()) dest.mkdirs();
+        File[] files = source.listFiles();
         for (File file : files) {
             try {
-                String sourceFile = dir + File.separator + file.getName();
-                String destinationFile = dest + File.separator + file.getName();
-                bufferedCopy(new File(sourceFile), new File(destinationFile));
+                File newFile = new File(dest.getAbsolutePath() + File.separator +
+                        file.getName());
+                if (file.isFile()) {
+                    bufferedCopy(file, newFile);
+                } else {
+                    copyFolder(file, newFile);
+                }
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
+    }
+
+    public static void copyFolder(String source, String dest) {
+        copyFolder(new File(source), new File(dest));
     }
 
     public static void unzip(String source, String destination) {
@@ -167,4 +175,23 @@ public class IOUtils {
         fileOrDirectory.delete();
     }
 
+    public static void setPermissions(File path, int permissions) {
+        FileUtils.setPermissions(path, permissions, -1, -1);
+    }
+
+    public static void setPermissionsRecursive(File dir, int file, int folder) {
+        if (dir.isDirectory()) {
+            for (File child : dir.listFiles()) {
+                if (child.isDirectory()) {
+                    setPermissionsRecursive(child, file, folder);
+                    setPermissions(child, folder);
+                } else {
+                    setPermissions(child, file);
+                }
+            }
+            setPermissions(dir, folder);
+        } else {
+            setPermissions(dir, file);
+        }
+    }
 }

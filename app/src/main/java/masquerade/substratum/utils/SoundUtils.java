@@ -27,7 +27,7 @@ public class SoundUtils {
     private static final String MEDIA_CONTENT_URI = "content://media/internal/audio/media";
 
     public static void updateGlobalSettings(ContentResolver resolver, String uri, String val) {
-        Settings.Global.putStringForUser(resolver, uri, val, UserHandle.USER_ALL);
+        Settings.Global.putStringForUser(resolver, uri, val, UserHandle.USER_SYSTEM);
     }
 
     public static boolean setUISounds(ContentResolver resolver, String sound_name, String location) {
