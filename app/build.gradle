@@ -1,7 +1,7 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 23
+    compileSdkVersion 25
     buildToolsVersion "23.0.3"
 
     lintOptions {
@@ -12,25 +12,41 @@ android {
     applicationVariants.all { variant ->
         variant.outputs.each { output ->
             output.outputFile = new File(
-                    output.outputFile.parent, "masquerade_beta_testers" + versionCode + ".apk")
+                    output.outputFile.parent, "masquerade_" + versionCode + ".apk")
         }
     }
 
     defaultConfig {
         applicationId "masquerade.substratum"
-        minSdkVersion 21
-        targetSdkVersion 23
-        versionCode 20
-        versionName "twenty - procyon"
+        minSdkVersion 25
+        targetSdkVersion 25
+        versionCode 23
+        versionName "twenty three"
+    }
+
+    defaultConfig {
+        jackOptions {
+            enabled true
+        }
+    }
+
+    compileOptions {
+        incremental true
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    dexOptions {
+        javaMaxHeapSize '2048m'
     }
 
     buildTypes {
         debug {
-            minifyEnabled true
+            minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
         release {
-            minifyEnabled true
+            minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }

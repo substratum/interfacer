@@ -1,8 +1,24 @@
+/*
+ * Copyright (c) 2017 Project Substratum
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ * Also add information on how to contact you by electronic and paper mail.
+ *
+ */
 
 package masquerade.substratum.utils;
-
-import java.io.File;
-import java.util.Arrays;
 
 import android.content.ContentResolver;
 import android.content.ContentValues;
@@ -13,8 +29,11 @@ import android.net.Uri;
 import android.os.SystemProperties;
 import android.os.UserHandle;
 import android.provider.MediaStore;
-import android.util.Log;
 import android.provider.Settings;
+import android.util.Log;
+
+import java.io.File;
+import java.util.Arrays;
 
 public class SoundUtils {
     private static final String SYSTEM_MEDIA_PATH = "/system/media/audio";
@@ -26,11 +45,12 @@ public class SoundUtils {
             SYSTEM_MEDIA_PATH + File.separator + "notifications";
     private static final String MEDIA_CONTENT_URI = "content://media/internal/audio/media";
 
-    public static void updateGlobalSettings(ContentResolver resolver, String uri, String val) {
+    private static void updateGlobalSettings(ContentResolver resolver, String uri, String val) {
         Settings.Global.putStringForUser(resolver, uri, val, UserHandle.USER_SYSTEM);
     }
 
-    public static boolean setUISounds(ContentResolver resolver, String sound_name, String location) {
+    public static boolean setUISounds(ContentResolver resolver, String sound_name, String
+            location) {
         if (allowedUISound(sound_name)) {
             updateGlobalSettings(resolver, sound_name, location);
             return true;
@@ -39,12 +59,12 @@ public class SoundUtils {
     }
 
     public static void setDefaultUISounds(ContentResolver resolver, String sound_name,
-            String sound_file) {
+                                          String sound_file) {
         updateGlobalSettings(resolver, sound_name, "/system/media/audio/ui/" + sound_file);
     }
 
     // This string array contains all the SystemUI acceptable sound files
-    public static Boolean allowedUISound(String targetValue) {
+    private static Boolean allowedUISound(String targetValue) {
         String[] allowed_themable = {
                 "lock_sound",
                 "unlock_sound",
@@ -53,7 +73,7 @@ public class SoundUtils {
         return Arrays.asList(allowed_themable).contains(targetValue);
     }
 
-    public static String getDefaultAudiblePath(int type) {
+    private static String getDefaultAudiblePath(int type) {
         final String name;
         final String path;
         switch (type) {
@@ -76,25 +96,8 @@ public class SoundUtils {
         return path;
     }
 
-    public static void clearAudibles(Context context, String audiblePath) {
-        final File audibleDir = new File(audiblePath);
-        if (audibleDir.exists() && audibleDir.isDirectory()) {
-            String[] files = audibleDir.list();
-            final ContentResolver resolver = context.getContentResolver();
-            for (String s : files) {
-                final String filePath = audiblePath + File.separator + s;
-                Uri uri = MediaStore.Audio.Media.getContentUriForPath(filePath);
-                resolver.delete(uri, MediaStore.MediaColumns.DATA + "=\""
-                        + filePath + "\"", null);
-                boolean deleted = (new File(filePath)).delete();
-                if (deleted)
-                    Log.e("SoundsHandler", "Database cleared");
-            }
-        }
-    }
-
     public static boolean setAudible(Context context, File ringtone, File ringtoneCache, int type,
-            String name) {
+                                     String name) {
         final String path = ringtone.getAbsolutePath();
         final String mimeType = name.endsWith(".ogg") ? "application/ogg" : "application/mp3";
         ContentValues values = new ContentValues();
@@ -111,8 +114,8 @@ public class SoundUtils {
         Uri uri = MediaStore.Audio.Media.getContentUriForPath(path);
         Uri newUri = null;
         Cursor c = context.getContentResolver().query(uri,
-                new String[] {
-                    MediaStore.MediaColumns._ID
+                new String[]{
+                        MediaStore.MediaColumns._ID
                 },
                 MediaStore.MediaColumns.DATA + "='" + path + "'",
                 null, null);
@@ -135,7 +138,7 @@ public class SoundUtils {
     }
 
     public static boolean setUIAudible(Context context, File localized_ringtone,
-            File ringtone_file, int type, String name) {
+                                       File ringtone_file, int type, String name) {
         final String path = ringtone_file.getAbsolutePath();
 
         final String path_clone = "/system/media/audio/ui/" + name + ".ogg";
@@ -153,8 +156,8 @@ public class SoundUtils {
         Uri uri = MediaStore.Audio.Media.getContentUriForPath(path);
         Uri newUri = null;
         Cursor c = context.getContentResolver().query(uri,
-                new String[] {
-                    MediaStore.MediaColumns._ID
+                new String[]{
+                        MediaStore.MediaColumns._ID
                 },
                 MediaStore.MediaColumns.DATA + "='" + path_clone + "'",
                 null, null);
@@ -187,8 +190,8 @@ public class SoundUtils {
         if (audiblePath != null) {
             Uri uri = MediaStore.Audio.Media.getContentUriForPath(audiblePath);
             Cursor c = context.getContentResolver().query(uri,
-                    new String[] {
-                        MediaStore.MediaColumns._ID
+                    new String[]{
+                            MediaStore.MediaColumns._ID
                     },
                     MediaStore.MediaColumns.DATA + "='" + audiblePath + "'",
                     null, null);
@@ -206,5 +209,4 @@ public class SoundUtils {
         }
         return true;
     }
-
 }

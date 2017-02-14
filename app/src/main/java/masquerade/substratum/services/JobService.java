@@ -1,3 +1,23 @@
+/*
+ * Copyright (c) 2017 Project Substratum
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ * Also add information on how to contact you by electronic and paper mail.
+ *
+ */
+
 package masquerade.substratum.services;
 
 import android.app.ActivityManager;
@@ -7,24 +27,19 @@ import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
-import android.content.IIntentReceiver;
-import android.content.IIntentSender;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.IntentSender;
 import android.content.om.IOverlayManager;
 import android.content.om.OverlayInfo;
 import android.content.pm.IPackageDeleteObserver;
 import android.content.pm.IPackageInstallObserver2;
 import android.content.pm.IPackageManager;
-import android.content.pm.PackageInstaller;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.AssetManager;
 import android.content.res.Configuration;
 import android.graphics.Typeface;
 import android.media.RingtoneManager;
-import android.os.Binder;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.FileUtils;
@@ -42,42 +57,21 @@ import android.provider.Settings;
 import android.text.TextUtils;
 import android.util.Log;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.TimeUnit;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
+import java.util.stream.Collectors;
 
 import masquerade.substratum.utils.IOUtils;
 import masquerade.substratum.utils.SoundUtils;
 
-import com.android.internal.statusbar.IStatusBarService;
-
 public class JobService extends Service {
-    private static final String TAG = JobService.class.getSimpleName();
-    private static final boolean DEBUG = true;
-
-    private static final String MASQUERADE_TOKEN = "masquerade_token";
-    private static final String SUBSTRATUM_PACKAGE = "projekt.substratum";
-    private static final String[] AUTHORIZED_CALLERS = new String[] {
-            SUBSTRATUM_PACKAGE,
-            "masquerade.substratum"
-    };
-
     public static final String INTENT_STATUS_CHANGED = "masquerade.substratum.STATUS_CHANGED";
-
     public static final String PRIMARY_COMMAND_KEY = "primary_command_key";
     public static final String JOB_TIME_KEY = "job_time_key";
     public static final String INSTALL_LIST_KEY = "install_list";
@@ -109,20 +103,47 @@ public class JobService extends Service {
     public static final String COMMAND_VALUE_MOVE = "move";
     public static final String COMMAND_VALUE_DELETE = "delete";
     public static final String COMMAND_VALUE_PROFILE = "profile";
-
+    private static final String TAG = JobService.class.getSimpleName();
+    private static final boolean DEBUG = true;
+    private static final String MASQUERADE_TOKEN = "masquerade_token";
+    private static final String MASQUERADE_PACKAGE = "masquerade.substratum";
+    private static final String SUBSTRATUM_PACKAGE = "projekt.substratum";
+    private static final String[] AUTHORIZED_CALLERS = new String[]{
+            MASQUERADE_PACKAGE,
+            SUBSTRATUM_PACKAGE,
+    };
     private static IOverlayManager mOMS;
     private static IPackageManager mPM;
-
-    private HandlerThread mWorker;
+    private final List<Runnable> mJobQueue = new ArrayList<>(0);
     private JobHandler mJobHandler;
     private MainHandler mMainHandler;
-    private final List<Runnable> mJobQueue = new ArrayList<>(0);
     private long mLastJobTime;
     private boolean mIsRunning;
 
+    private static IOverlayManager getOMS() {
+        if (mOMS == null) {
+            mOMS = IOverlayManager.Stub.asInterface(
+                    ServiceManager.getService("overlay"));
+        }
+        return mOMS;
+    }
+
+    private static IPackageManager getPM() {
+        if (mPM == null) {
+            mPM = IPackageManager.Stub.asInterface(
+                    ServiceManager.getService("package"));
+        }
+        return mPM;
+    }
+
+    public static void log(String msg) {
+        if (DEBUG) Log.e(TAG, msg);
+    }
+
     @Override
     public void onCreate() {
-        mWorker = new HandlerThread("BackgroundWorker", Process.THREAD_PRIORITY_BACKGROUND);
+        HandlerThread mWorker = new HandlerThread("BackgroundWorker", Process
+                .THREAD_PRIORITY_BACKGROUND);
         mWorker.start();
         mJobHandler = new JobHandler(mWorker.getLooper());
         mMainHandler = new MainHandler(Looper.getMainLooper());
@@ -137,39 +158,33 @@ public class JobService extends Service {
         }
 
         // Don't run job if there is another running job
-        mIsRunning = false;
-        if (isProcessing()) mIsRunning = true;
+        mIsRunning = isProcessing();
 
-        // filter out duplicate intents
+        // Filter out duplicate intents
         long jobTime = intent.getLongExtra(JOB_TIME_KEY, 1);
         if (jobTime == 1 || jobTime == mLastJobTime) {
-            log("got empty jobtime or duplicate job time, aborting");
+            log("Received empty job time or duplicate job time, aborting");
             return START_NOT_STICKY;
         }
         mLastJobTime = jobTime;
 
-        // must have a primary command
+        // Must have a primary command
         String command = intent.getStringExtra(PRIMARY_COMMAND_KEY);
         if (TextUtils.isEmpty(command)) {
-            log("Got empty primary command, aborting");
+            log("Received empty primary command, aborting");
             return START_NOT_STICKY;
         }
 
-        // queue up the job
-
+        // Queue up the job
         List<Runnable> jobs_to_add = new ArrayList<>(0);
 
-        log("Starting job with primary command " + command + " With job time " + jobTime);
+        log("Starting job with primary command \'" + command + "\', with job time: " + jobTime);
         if (TextUtils.equals(command, COMMAND_VALUE_INSTALL)) {
             List<String> paths = intent.getStringArrayListExtra(INSTALL_LIST_KEY);
-            for (String path : paths) {
-                jobs_to_add.add(new Installer(path));
-            }
+            jobs_to_add.addAll(paths.stream().map(Installer::new).collect(Collectors.toList()));
         } else if (TextUtils.equals(command, COMMAND_VALUE_UNINSTALL)) {
             List<String> packages = intent.getStringArrayListExtra(UNINSTALL_LIST_KEY);
-            for (String _package : packages) {
-                jobs_to_add.add(new Remover(_package));
-            }
+            jobs_to_add.addAll(packages.stream().map(Remover::new).collect(Collectors.toList()));
             if (shouldRestartUi(packages)) jobs_to_add.add(new UiResetJob());
         } else if (TextUtils.equals(command, COMMAND_VALUE_RESTART_UI)) {
             jobs_to_add.add(new UiResetJob());
@@ -194,15 +209,11 @@ public class JobService extends Service {
             jobs_to_add.add(new UiResetJob());
         } else if (TextUtils.equals(command, COMMAND_VALUE_ENABLE)) {
             List<String> packages = intent.getStringArrayListExtra(ENABLE_LIST_KEY);
-            for (String _package : packages) {
-                jobs_to_add.add(new Enabler(_package));
-            }
+            jobs_to_add.addAll(packages.stream().map(Enabler::new).collect(Collectors.toList()));
             if (shouldRestartUi(packages)) jobs_to_add.add(new UiResetJob());
         } else if (TextUtils.equals(command, COMMAND_VALUE_DISABLE)) {
             List<String> packages = intent.getStringArrayListExtra(DISABLE_LIST_KEY);
-            for (String _package : packages) {
-                jobs_to_add.add(new Disabler(_package));
-            }
+            jobs_to_add.addAll(packages.stream().map(Disabler::new).collect(Collectors.toList()));
             if (shouldRestartUi(packages)) jobs_to_add.add(new UiResetJob());
         } else if (TextUtils.equals(command, COMMAND_VALUE_PRIORITY)) {
             List<String> packages = intent.getStringArrayListExtra(PRIORITY_LIST_KEY);
@@ -241,7 +252,6 @@ public class JobService extends Service {
                 mJobHandler.sendEmptyMessage(JobHandler.MESSAGE_CHECK_QUEUE);
             }
         }
-
         return START_NOT_STICKY;
     }
 
@@ -252,35 +262,13 @@ public class JobService extends Service {
 
     @Override
     public void onDestroy() {
-
     }
 
     private boolean isProcessing() {
         return mJobQueue.size() > 0;
     }
 
-    private class LocalService extends Binder {
-        public JobService getService() {
-            return JobService.this;
-        }
-    }
-
-    private static IOverlayManager getOMS() {
-        if (mOMS == null) {
-            mOMS = IOverlayManager.Stub.asInterface(
-                    ServiceManager.getService("overlay"));
-        }
-        return mOMS;
-    }
-
-    private static IPackageManager getPM() {
-        if (mPM == null) {
-            mPM = IPackageManager.Stub.asInterface(
-                    ServiceManager.getService("package"));
-        }
-        return mPM;
-    }
-
+    @SuppressWarnings("deprecation")
     private void install(String path, IPackageInstallObserver2 observer) {
         try {
             getPM().installPackageAsUser(path, observer,
@@ -292,6 +280,7 @@ public class JobService extends Service {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private void uninstall(String packageName, IPackageDeleteObserver observer) {
         try {
             getPM().deletePackageAsUser(packageName, observer, 0, UserHandle.USER_SYSTEM);
@@ -315,7 +304,7 @@ public class JobService extends Service {
             if (info != null) {
                 enabled = info.isEnabled();
             } else {
-                log("info is null");
+                log("OverlayInfo is null.");
             }
         } catch (RemoteException e) {
             e.printStackTrace();
@@ -331,24 +320,25 @@ public class JobService extends Service {
     }
 
     private void copyFonts(String pid, String zipFileName) {
-        // prepare local cache dir for font package assembly
+        // Prepare local cache dir for font package assembly
         log("Copy Fonts - Package ID = " + pid + " filename = " + zipFileName);
         File cacheDir = new File(getCacheDir(), "/FontCache/");
         if (cacheDir.exists()) {
             IOUtils.deleteRecursive(cacheDir);
         }
-        cacheDir.mkdir();
+        boolean created = cacheDir.mkdir();
+        if (!created) log("Could not create cache directory...");
 
-        // copy system fonts into our cache dir
+        // Copy system fonts into our cache dir
         IOUtils.copyFolder("/system/fonts", cacheDir.getAbsolutePath());
 
-        // append zip to filename since it is probably removed
+        // Append zip to filename since it is probably removed
         // for list presentation
         if (!zipFileName.endsWith(".zip")) {
             zipFileName = zipFileName + ".zip";
         }
 
-        // copy target themed fonts zip to our cache dir
+        // Copy target themed fonts zip to our cache dir
         Context themeContext = getAppContext(pid);
         AssetManager am = themeContext.getAssets();
         try {
@@ -360,12 +350,13 @@ public class JobService extends Service {
             e.printStackTrace();
         }
 
-        // unzip new fonts and delete zip file, overwriting any system fonts
+        // Unzip new fonts and delete zip file, overwriting any system fonts
         File fontZip = new File(getCacheDir(), "/FontCache/" + zipFileName);
         IOUtils.unzip(fontZip.getAbsolutePath(), cacheDir.getAbsolutePath());
-        fontZip.delete();
+        boolean deleted = fontZip.delete();
+        if (!deleted) log("Could not delete ZIP file...");
 
-        // check if theme zip included a fonts.xml. If not, Substratum
+        // Check if theme zip included a fonts.xml. If not, Substratum
         // is kind enough to provide one for us in it's assets
         try {
             File testConfig = new File(getCacheDir(), "/FontCache/" + "fonts.xml");
@@ -380,12 +371,12 @@ public class JobService extends Service {
             e.printStackTrace();
         }
 
-        // prepare system theme fonts folder and copy new fonts folder from our cache
+        // Prepare system theme fonts folder and copy new fonts folder from our cache
         IOUtils.deleteThemedFonts();
         IOUtils.createFontDirIfNotExists();
         IOUtils.copyFolder(cacheDir.getAbsolutePath(), IOUtils.SYSTEM_THEME_FONT_PATH);
 
-        // let system know it's time for a font change
+        // Let system know it's time for a font change
         refreshFonts();
     }
 
@@ -395,7 +386,7 @@ public class JobService extends Service {
     }
 
     private void refreshFonts() {
-        // set permissions on font files and config xml
+        // Set permissions on font files and config xml
         File themeFonts = new File(IOUtils.SYSTEM_THEME_FONT_PATH);
         if (themeFonts.exists()) {
             // Set permissions
@@ -404,7 +395,7 @@ public class JobService extends Service {
                     FileUtils.S_IRWXU | FileUtils.S_IRWXG | FileUtils.S_IROTH | FileUtils.S_IXOTH);
         }
 
-        // let system know it's time for a font change
+        // Let system know it's time for a font change
         SystemProperties.set("sys.refresh_theme", "1");
         Typeface.recreateDefaults();
         float fontSize = Float.valueOf(Settings.System.getString(
@@ -414,21 +405,23 @@ public class JobService extends Service {
     }
 
     private void applyThemedSounds(String pid, String zipFileName) {
-        // prepare local cache dir for font package assembly
-        log("Copy sounds - Package ID = " + pid + " filename = " + zipFileName);
+        // Prepare local cache dir for font package assembly
+        log("CopySounds - Package ID = \'" + pid + "\'");
+        log("CopySounds - File name = \'" + zipFileName + "\'");
         File cacheDir = new File(getCacheDir(), "/SoundsCache/");
         if (cacheDir.exists()) {
             IOUtils.deleteRecursive(cacheDir);
         }
-        cacheDir.mkdir();
+        boolean created = cacheDir.mkdir();
+        if (!created) log("Could not create cache directory...");
 
-        // append zip to filename since it is probably removed
+        // Append zip to filename since it is probably removed
         // for list presentation
         if (!zipFileName.endsWith(".zip")) {
             zipFileName = zipFileName + ".zip";
         }
 
-        // copy target themed sounds zip to our cache dir
+        // Copy target themed sounds zip to our cache dir
         Context themeContext = getAppContext(pid);
         AssetManager am = themeContext.getAssets();
         try {
@@ -440,10 +433,11 @@ public class JobService extends Service {
             e.printStackTrace();
         }
 
-        // unzip new sounds and delete zip file
+        // Unzip new sounds and delete zip file
         File soundsZip = new File(getCacheDir(), "/SoundsCache/" + zipFileName);
         IOUtils.unzip(soundsZip.getAbsolutePath(), cacheDir.getAbsolutePath());
-        soundsZip.delete();
+        boolean deleted = soundsZip.delete();
+        if (!deleted) log("Could not delete ZIP file...");
 
         clearSounds(this);
         IOUtils.createAudioDirIfNotExists();
@@ -454,30 +448,38 @@ public class JobService extends Service {
             File effect_tick_mp3 = new File(getCacheDir(), "/SoundsCache/ui/Effect_Tick.mp3");
             File effect_tick_ogg = new File(getCacheDir(), "/SoundsCache/ui/Effect_Tick.ogg");
             if (effect_tick_ogg.exists()) {
-                IOUtils.bufferedCopy(effect_tick_ogg, new File(IOUtils.SYSTEM_THEME_UI_SOUNDS_PATH + File.separator + "Effect_Tick.ogg"));
+                IOUtils.bufferedCopy(effect_tick_ogg, new File(IOUtils
+                        .SYSTEM_THEME_UI_SOUNDS_PATH + File.separator + "Effect_Tick.ogg"));
             } else if (effect_tick_mp3.exists()) {
-                IOUtils.bufferedCopy(effect_tick_mp3, new File(IOUtils.SYSTEM_THEME_UI_SOUNDS_PATH + File.separator + "Effect_Tick.mp3"));
+                IOUtils.bufferedCopy(effect_tick_mp3, new File(IOUtils
+                        .SYSTEM_THEME_UI_SOUNDS_PATH + File.separator + "Effect_Tick.mp3"));
             }
             File new_lock_mp3 = new File(getCacheDir(), "/SoundsCache/ui/Lock.mp3");
             File new_lock_ogg = new File(getCacheDir(), "/SoundsCache/ui/Lock.ogg");
             if (new_lock_ogg.exists()) {
-                IOUtils.bufferedCopy(new_lock_ogg, new File(IOUtils.SYSTEM_THEME_UI_SOUNDS_PATH + File.separator + "Lock.ogg"));
+                IOUtils.bufferedCopy(new_lock_ogg, new File(IOUtils.SYSTEM_THEME_UI_SOUNDS_PATH +
+                        File.separator + "Lock.ogg"));
             } else if (new_lock_mp3.exists()) {
-                IOUtils.bufferedCopy(new_lock_mp3, new File(IOUtils.SYSTEM_THEME_UI_SOUNDS_PATH + File.separator + "Lock.mp3"));
+                IOUtils.bufferedCopy(new_lock_mp3, new File(IOUtils.SYSTEM_THEME_UI_SOUNDS_PATH +
+                        File.separator + "Lock.mp3"));
             }
             File new_unlock_mp3 = new File(getCacheDir(), "/SoundsCache/ui/Unlock.mp3");
             File new_unlock_ogg = new File(getCacheDir(), "/SoundsCache/ui/Unlock.ogg");
             if (new_unlock_ogg.exists()) {
-                IOUtils.bufferedCopy(new_unlock_ogg, new File(IOUtils.SYSTEM_THEME_UI_SOUNDS_PATH + File.separator + "Unlock.ogg"));
+                IOUtils.bufferedCopy(new_unlock_ogg, new File(IOUtils.SYSTEM_THEME_UI_SOUNDS_PATH
+                        + File.separator + "Unlock.ogg"));
             } else if (new_unlock_mp3.exists()) {
-                IOUtils.bufferedCopy(new_unlock_mp3, new File(IOUtils.SYSTEM_THEME_UI_SOUNDS_PATH + File.separator + "Unlock.mp3"));
+                IOUtils.bufferedCopy(new_unlock_mp3, new File(IOUtils.SYSTEM_THEME_UI_SOUNDS_PATH
+                        + File.separator + "Unlock.mp3"));
             }
             File new_lowbattery_mp3 = new File(getCacheDir(), "/SoundsCache/ui/LowBattery.mp3");
             File new_lowbattery_ogg = new File(getCacheDir(), "/SoundsCache/ui/LowBattery.ogg");
             if (new_lowbattery_ogg.exists()) {
-                IOUtils.bufferedCopy(new_lowbattery_ogg, new File(IOUtils.SYSTEM_THEME_UI_SOUNDS_PATH + File.separator + "LowBattery.ogg"));
+                IOUtils.bufferedCopy(new_lowbattery_ogg, new File(IOUtils
+                        .SYSTEM_THEME_UI_SOUNDS_PATH + File.separator + "LowBattery.ogg"));
             } else if (new_lowbattery_mp3.exists()) {
-                IOUtils.bufferedCopy(new_lowbattery_mp3, new File(IOUtils.SYSTEM_THEME_UI_SOUNDS_PATH + File.separator + "LowBattery.mp3"));
+                IOUtils.bufferedCopy(new_lowbattery_mp3, new File(IOUtils
+                        .SYSTEM_THEME_UI_SOUNDS_PATH + File.separator + "LowBattery.mp3"));
             }
         }
         File alarmCache = new File(getCacheDir(), "/SoundsCache/alarms/");
@@ -486,20 +488,26 @@ public class JobService extends Service {
             File new_alarm_mp3 = new File(getCacheDir(), "/SoundsCache/alarms/alarm.mp3");
             File new_alarm_ogg = new File(getCacheDir(), "/SoundsCache/alarms/alarm.ogg");
             if (new_alarm_ogg.exists()) {
-                IOUtils.bufferedCopy(new_alarm_ogg, new File(IOUtils.SYSTEM_THEME_ALARM_PATH + File.separator + "alarm.ogg"));
+                IOUtils.bufferedCopy(new_alarm_ogg, new File(IOUtils.SYSTEM_THEME_ALARM_PATH +
+                        File.separator + "alarm.ogg"));
             } else if (new_alarm_mp3.exists()) {
-                IOUtils.bufferedCopy(new_alarm_mp3, new File(IOUtils.SYSTEM_THEME_ALARM_PATH + File.separator + "alarm.mp3"));
+                IOUtils.bufferedCopy(new_alarm_mp3, new File(IOUtils.SYSTEM_THEME_ALARM_PATH +
+                        File.separator + "alarm.mp3"));
             }
         }
         File notifCache = new File(getCacheDir(), "/SoundsCache/notifications/");
         if (notifCache.exists() && notifCache.isDirectory()) {
             IOUtils.createNotificationDirIfNotExists();
-            File new_notif_mp3 = new File(getCacheDir(), "/SoundsCache/notifications/notification.mp3");
-            File new_notif_ogg = new File(getCacheDir(), "/SoundsCache/notifications/notification.ogg");
+            File new_notif_mp3 = new File(getCacheDir(), "/SoundsCache/notifications/notification" +
+                    ".mp3");
+            File new_notif_ogg = new File(getCacheDir(), "/SoundsCache/notifications/notification" +
+                    ".ogg");
             if (new_notif_ogg.exists()) {
-                IOUtils.bufferedCopy(new_notif_ogg, new File(IOUtils.SYSTEM_THEME_NOTIFICATION_PATH + File.separator + "notification.ogg"));
+                IOUtils.bufferedCopy(new_notif_ogg, new File(IOUtils
+                        .SYSTEM_THEME_NOTIFICATION_PATH + File.separator + "notification.ogg"));
             } else if (new_notif_mp3.exists()) {
-                IOUtils.bufferedCopy(new_notif_mp3, new File(IOUtils.SYSTEM_THEME_NOTIFICATION_PATH + File.separator + "notification.mp3"));
+                IOUtils.bufferedCopy(new_notif_mp3, new File(IOUtils
+                        .SYSTEM_THEME_NOTIFICATION_PATH + File.separator + "notification.mp3"));
             }
         }
         File ringtoneCache = new File(getCacheDir(), "/SoundsCache/ringtones/");
@@ -508,28 +516,30 @@ public class JobService extends Service {
             File new_ring_mp3 = new File(getCacheDir(), "/SoundsCache/ringtones/ringtone.mp3");
             File new_ring_ogg = new File(getCacheDir(), "/SoundsCache/ringtones/ringtone.ogg");
             if (new_ring_ogg.exists()) {
-                IOUtils.bufferedCopy(new_ring_ogg, new File(IOUtils.SYSTEM_THEME_RINGTONE_PATH + File.separator + "ringtone.ogg"));
+                IOUtils.bufferedCopy(new_ring_ogg, new File(IOUtils.SYSTEM_THEME_RINGTONE_PATH +
+                        File.separator + "ringtone.ogg"));
             } else if (new_ring_mp3.exists()) {
-                IOUtils.bufferedCopy(new_ring_mp3, new File(IOUtils.SYSTEM_THEME_RINGTONE_PATH + File.separator + "ringtone.mp3"));
+                IOUtils.bufferedCopy(new_ring_mp3, new File(IOUtils.SYSTEM_THEME_RINGTONE_PATH +
+                        File.separator + "ringtone.mp3"));
             }
         }
 
-        // let system know it's time for a sound change
+        // Let system know it's time for a sound change
         refreshSounds();
     }
 
     private void clearSounds(Context ctx) {
         IOUtils.deleteThemedAudio();
-        SoundUtils.setDefaultAudible(JobService.this, RingtoneManager.TYPE_ALARM);
-        SoundUtils.setDefaultAudible(JobService.this, RingtoneManager.TYPE_NOTIFICATION);
-        SoundUtils.setDefaultAudible(JobService.this, RingtoneManager.TYPE_RINGTONE);
+        SoundUtils.setDefaultAudible(ctx, RingtoneManager.TYPE_ALARM);
+        SoundUtils.setDefaultAudible(ctx, RingtoneManager.TYPE_NOTIFICATION);
+        SoundUtils.setDefaultAudible(ctx, RingtoneManager.TYPE_RINGTONE);
         SoundUtils.setDefaultUISounds(getContentResolver(), "lock_sound", "Lock.ogg");
         SoundUtils.setDefaultUISounds(getContentResolver(), "unlock_sound", "Unlock.ogg");
         SoundUtils.setDefaultUISounds(getContentResolver(), "low_battery_sound",
                 "LowBattery.ogg");
     }
 
-    private void refreshSounds () {
+    private void refreshSounds() {
         File soundsDir = new File(IOUtils.SYSTEM_THEME_AUDIO_PATH);
         if (soundsDir.exists()) {
             // Set permissions
@@ -644,13 +654,15 @@ public class JobService extends Service {
             }
         }
     }
+
     private void copyBootAnimation(String fileName) {
         try {
             clearBootAnimation();
             File source = new File(fileName);
             File dest = new File(IOUtils.SYSTEM_THEME_BOOTANIMATION_PATH);
             IOUtils.bufferedCopy(source, dest);
-            source.delete();
+            boolean deleted = source.delete();
+            if (!deleted) log("Could not delete source file...");
             IOUtils.setPermissions(dest,
                     FileUtils.S_IRWXU | FileUtils.S_IRGRP | FileUtils.S_IROTH);
         } catch (Exception e) {
@@ -662,21 +674,25 @@ public class JobService extends Service {
         try {
             File f = new File(IOUtils.SYSTEM_THEME_BOOTANIMATION_PATH);
             if (f.exists()) {
-                f.delete();
+                boolean deleted = f.delete();
+                if (!deleted) log("Could not delete themed boot animation...");
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
+    @SuppressWarnings({"unchecked", "ConfusingArgumentToVarargsMethod"})
     private void restartUi() {
         try {
             ActivityManager am = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
             Class ActivityManagerNative = Class.forName("android.app.ActivityManagerNative");
             Method getDefault = ActivityManagerNative.getDeclaredMethod("getDefault", null);
             Object amn = getDefault.invoke(null, null);
-            Method killApplicationProcess = amn.getClass().getDeclaredMethod("killApplicationProcess", String.class, int.class);
-            stopService(new Intent().setComponent(new ComponentName("com.android.systemui", "com.android.systemui.SystemUIService")));
+            Method killApplicationProcess = amn.getClass().getDeclaredMethod
+                    ("killApplicationProcess", String.class, int.class);
+            stopService(new Intent().setComponent(new ComponentName("com.android.systemui", "com" +
+                    ".android.systemui.SystemUIService")));
             am.killBackgroundProcesses("com.android.systemui");
             for (ActivityManager.RunningAppProcessInfo app : am.getRunningAppProcesses()) {
                 if ("com.android.systemui".equals(app.processName)) {
@@ -685,15 +701,6 @@ public class JobService extends Service {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void killPackage(String packageName) {
-        try {
-            ActivityManagerNative.getDefault().forceStopPackage(packageName,
-                    UserHandle.USER_SYSTEM);
-        } catch (RemoteException e) {
             e.printStackTrace();
         }
     }
@@ -713,45 +720,38 @@ public class JobService extends Service {
         return ctx;
     }
 
-    public static void log(String msg) {
-        if (DEBUG) {
-            Log.e(TAG, msg);
-        }
-    }
-
     private boolean isCallerAuthorized(Intent intent) {
         PendingIntent token = null;
         try {
-            token = (PendingIntent) intent.getParcelableExtra(MASQUERADE_TOKEN);
+            token = intent.getParcelableExtra(MASQUERADE_TOKEN);
         } catch (Exception e) {
-            log("Attempt to start serivce without a token, unauthorized");
+            log("Attempting to start service without a token - unauthorized!");
         }
-        if (token == null) {
-            return false;
-        }
-        // SECOND: we got a token, validate originating package
-        // if not in our whitelist, return null
+        if (token == null) return false;
+        // SECOND: We got a token, validate originating package
+        // if not in our white list, return null
         String callingPackage = token.getCreatorPackage();
         boolean isValidPackage = false;
-        for (int i = 0; i < AUTHORIZED_CALLERS.length; i++) {
-            if (TextUtils.equals(callingPackage, AUTHORIZED_CALLERS[i])) {
-                log(callingPackage
-                        + " is an authorized calling package, next validate calling package perms");
+        for (String AUTHORIZED_CALLER : AUTHORIZED_CALLERS) {
+            if (TextUtils.equals(callingPackage, AUTHORIZED_CALLER)) {
+                log("\'" + callingPackage
+                        + "\' is an authorized calling package, validating calling package " +
+                        "permissions...");
                 isValidPackage = true;
                 break;
             }
         }
         if (!isValidPackage) {
-            log(callingPackage + " is not an authorized calling package");
+            log("\'" + callingPackage + "\' is not an authorized calling package.");
             return false;
         }
         return true;
     }
 
     private class MainHandler extends Handler {
-        public static final int MSG_JOB_QUEUE_EMPTY = 1;
+        static final int MSG_JOB_QUEUE_EMPTY = 1;
 
-        public MainHandler(Looper looper) {
+        MainHandler(Looper looper) {
             super(looper);
         }
 
@@ -771,7 +771,7 @@ public class JobService extends Service {
         private static final int MESSAGE_CHECK_QUEUE = 1;
         private static final int MESSAGE_DEQUEUE = 2;
 
-        public JobHandler(Looper looper) {
+        JobHandler(Looper looper) {
             super(looper);
         }
 
@@ -783,9 +783,7 @@ public class JobService extends Service {
                     synchronized (mJobQueue) {
                         job = mJobQueue.get(0);
                     }
-                    if (job != null && !mIsRunning) {
-                        job.run();
-                    }
+                    if (job != null && !mIsRunning) job.run();
                     break;
                 case MESSAGE_DEQUEUE:
                     Runnable toRemove = (Runnable) msg.obj;
@@ -796,7 +794,7 @@ public class JobService extends Service {
                             this.sendEmptyMessage(MESSAGE_CHECK_QUEUE);
                         } else {
                             mIsRunning = false;
-                            log("Job queue empty! All done");
+                            log("Job queue is empty. All done!");
                             mMainHandler.sendEmptyMessage(MainHandler.MSG_JOB_QUEUE_EMPTY);
                         }
                     }
@@ -805,23 +803,6 @@ public class JobService extends Service {
                     log("Unknown message " + msg.what);
                     break;
             }
-        }
-    }
-
-    private class StopPackageJob implements Runnable {
-        String mPackage;
-
-        public void StopPackageJob(String _package) {
-            mPackage = _package;
-        }
-
-        @Override
-        public void run() {
-            killPackage(mPackage);
-            log("Killed package " + mPackage);
-            Message message = mJobHandler.obtainMessage(JobHandler.MESSAGE_DEQUEUE,
-                    StopPackageJob.this);
-            mJobHandler.sendMessage(message);
         }
     }
 
@@ -841,7 +822,7 @@ public class JobService extends Service {
         String mPid;
         String mFileName;
 
-        public FontsJob(String pid, String fileName) {
+        FontsJob(String pid, String fileName) {
             if (pid == null) {
                 mClear = true;
             } else {
@@ -853,10 +834,10 @@ public class JobService extends Service {
         @Override
         public void run() {
             if (mClear) {
-                log("Resetting system font");
+                log("Restoring system font...");
                 clearFonts();
             } else {
-                log("Setting theme font");
+                log("Configuring theme font...");
                 copyFonts(mPid, mFileName);
             }
             Intent intent = new Intent(INTENT_STATUS_CHANGED);
@@ -873,7 +854,7 @@ public class JobService extends Service {
         String mPid;
         String mFileName;
 
-        public SoundsJob(String pid, String fileName) {
+        SoundsJob(String pid, String fileName) {
             if (pid == null) {
                 mClear = true;
             } else {
@@ -885,10 +866,10 @@ public class JobService extends Service {
         @Override
         public void run() {
             if (mClear) {
-                log("Resetting system sounds");
+                log("Restoring system sounds...");
                 clearSounds(JobService.this);
             } else {
-                log("Setting theme sounds");
+                log("Configuring theme sounds...");
                 applyThemedSounds(mPid, mFileName);
             }
             Intent intent = new Intent(INTENT_STATUS_CHANGED);
@@ -901,14 +882,14 @@ public class JobService extends Service {
     }
 
     private class BootAnimationJob implements Runnable {
-        String mFileName;
         final boolean mClear;
+        String mFileName;
 
-        public BootAnimationJob(boolean clear) {
-            mClear = true;
+        BootAnimationJob(boolean clear) {
+            mClear = clear;
         }
 
-        public BootAnimationJob(String fileName) {
+        BootAnimationJob(String fileName) {
             mFileName = fileName;
             mClear = false;
         }
@@ -916,10 +897,10 @@ public class JobService extends Service {
         @Override
         public void run() {
             if (mClear) {
-                log("Resetting system boot animation");
+                log("Restoring system boot animation...");
                 clearBootAnimation();
             } else {
-                log("Setting themed boot animation");
+                log("Configuring themed boot animation...");
                 copyBootAnimation(mFileName);
             }
             Intent intent = new Intent(INTENT_STATUS_CHANGED);
@@ -934,13 +915,13 @@ public class JobService extends Service {
     private class Installer implements Runnable {
         String mPath;
 
-        public Installer(String path) {
+        Installer(String path) {
             mPath = path;
         }
 
         @Override
         public void run() {
-            log("Installer - installing " + mPath);
+            log("Installer - installing \'" + mPath + "\'...");
             PackageInstallObserver observer = new PackageInstallObserver(Installer.this);
             install(mPath, observer);
         }
@@ -949,7 +930,7 @@ public class JobService extends Service {
     private class PackageInstallObserver extends IPackageInstallObserver2.Stub {
         Object mObject;
 
-        public PackageInstallObserver(Object _object) {
+        PackageInstallObserver(Object _object) {
             mObject = _object;
         }
 
@@ -957,8 +938,9 @@ public class JobService extends Service {
             log("Installer - user action required callback");
         }
 
-        public void onPackageInstalled(String packageName, int returnCode, String msg, Bundle extras) {
-            log("Installer - successfully installed " + packageName);
+        public void onPackageInstalled(String packageName, int returnCode, String msg, Bundle
+                extras) {
+            log("Installer - successfully installed \'" + packageName + "\'!");
             Message message = mJobHandler.obtainMessage(JobHandler.MESSAGE_DEQUEUE, mObject);
             mJobHandler.sendMessage(message);
         }
@@ -967,20 +949,19 @@ public class JobService extends Service {
     private class Remover implements Runnable {
         String mPackage;
 
-        public Remover(String _package) {
+        Remover(String _package) {
             mPackage = _package;
         }
 
         @Override
         public void run() {
-
             // TODO: Fix isOverlayEnabled function, for now it's causing NPE
             if (isOverlayEnabled(mPackage)) {
-                log("Remover - disabling overlay for " + mPackage);
+                log("Remover - disabling overlay for \'" + mPackage + "\'...");
                 switchOverlay(mPackage, false);
             }
 
-            log("Remover - uninstalling " + mPackage);
+            log("Remover - uninstalling \'" + mPackage + "\'...");
             PackageDeleteObserver observer = new PackageDeleteObserver(Remover.this);
             uninstall(mPackage, observer);
         }
@@ -989,12 +970,12 @@ public class JobService extends Service {
     private class PackageDeleteObserver extends IPackageDeleteObserver.Stub {
         Object mObject;
 
-        public PackageDeleteObserver(Object _object) {
+        PackageDeleteObserver(Object _object) {
             mObject = _object;
         }
 
         public void packageDeleted(String packageName, int returnCode) {
-            log("Remover - successfully removed " + packageName);
+            log("Remover - successfully removed \'" + packageName + "\'");
             Message message = mJobHandler.obtainMessage(JobHandler.MESSAGE_DEQUEUE, mObject);
             mJobHandler.sendMessage(message);
         }
@@ -1003,13 +984,13 @@ public class JobService extends Service {
     private class Enabler implements Runnable {
         String mPackage;
 
-        public Enabler(String _package) {
+        Enabler(String _package) {
             mPackage = _package;
         }
 
         @Override
         public void run() {
-            log("Enabler - enabling overlay for " + mPackage);
+            log("Enabler - enabling overlay for \'" + mPackage + "\'...");
             switchOverlay(mPackage, true);
             Message message = mJobHandler.obtainMessage(JobHandler.MESSAGE_DEQUEUE,
                     Enabler.this);
@@ -1020,13 +1001,13 @@ public class JobService extends Service {
     private class Disabler implements Runnable {
         String mPackage;
 
-        public Disabler(String _package) {
+        Disabler(String _package) {
             mPackage = _package;
         }
 
         @Override
         public void run() {
-            log("Disabler - disabling overlay for " + mPackage);
+            log("Disabler - disabling overlay for \'" + mPackage + "\'...");
             switchOverlay(mPackage, false);
             Message message = mJobHandler.obtainMessage(JobHandler.MESSAGE_DEQUEUE,
                     Disabler.this);
@@ -1037,18 +1018,18 @@ public class JobService extends Service {
     private class PriorityJob implements Runnable {
         List<String> mPackages;
 
-        public PriorityJob(List<String> _packages) {
+        PriorityJob(List<String> _packages) {
             mPackages = _packages;
         }
 
         @Override
         public void run() {
-            log("PriorityJob - processing priority changes");
+            log("PriorityJob - processing priority changes...");
             try {
                 int size = mPackages.size();
-                for (int i = 0; i < size-1; i++) {
+                for (int i = 0; i < size - 1; i++) {
                     String parentName = mPackages.get(i);
-                    String packageName = mPackages.get(i+1);
+                    String packageName = mPackages.get(i + 1);
                     getOMS().setPriority(packageName, parentName, UserHandle.USER_SYSTEM);
                 }
             } catch (RemoteException e) {
@@ -1064,14 +1045,14 @@ public class JobService extends Service {
         String mSource;
         String mDestination;
 
-        public CopyJob(String _source, String _destination) {
+        CopyJob(String _source, String _destination) {
             mSource = _source;
             mDestination = _destination;
         }
 
         @Override
         public void run() {
-            log("CopyJob - copying " + mSource + " to " + mDestination);
+            log("CopyJob - copying \'" + mSource + "\' to \'" + mDestination + "\'...");
             File sourceFile = new File(mSource);
             if (sourceFile.exists()) {
                 if (sourceFile.isFile()) {
@@ -1080,7 +1061,7 @@ public class JobService extends Service {
                     IOUtils.copyFolder(mSource, mDestination);
                 }
             } else {
-                log("CopyJob - " + mSource + " is not exist! aborting...");
+                log("CopyJob - \'" + mSource + "\' does not exist, aborting...");
             }
             Message message = mJobHandler.obtainMessage(JobHandler.MESSAGE_DEQUEUE,
                     CopyJob.this);
@@ -1092,14 +1073,14 @@ public class JobService extends Service {
         String mSource;
         String mDestination;
 
-        public MoveJob(String _source, String _destination) {
+        MoveJob(String _source, String _destination) {
             mSource = _source;
             mDestination = _destination;
         }
 
         @Override
         public void run() {
-            log("MoveJob - moving " + mSource + " to " + mDestination);
+            log("MoveJob - moving \'" + mSource + "\' to \'" + mDestination + "\'...");
             File sourceFile = new File(mSource);
             if (sourceFile.exists()) {
                 if (sourceFile.isFile()) {
@@ -1109,7 +1090,7 @@ public class JobService extends Service {
                 }
                 IOUtils.deleteRecursive(sourceFile);
             } else {
-                log("MoveJob - " + mSource + " is not exist! aborting...");
+                log("MoveJob - \'" + mSource + "\' does not exist, aborting...");
             }
             Message message = mJobHandler.obtainMessage(JobHandler.MESSAGE_DEQUEUE,
                     MoveJob.this);
@@ -1120,18 +1101,18 @@ public class JobService extends Service {
     private class DeleteJob implements Runnable {
         String mFileOrDirectory;
 
-        public DeleteJob(String _directory) {
+        DeleteJob(String _directory) {
             mFileOrDirectory = _directory;
         }
 
         @Override
         public void run() {
-            log("DeleteJob - deleting " + mFileOrDirectory);
+            log("DeleteJob - deleting \'" + mFileOrDirectory + "\'...");
             File file = new File(mFileOrDirectory);
             if (file.exists()) {
                 IOUtils.deleteRecursive(file);
             } else {
-                log("DeleteJob - " + mFileOrDirectory + " is already deleted!");
+                log("DeleteJob - \'" + mFileOrDirectory + "\' is already deleted.");
             }
             Message message = mJobHandler.obtainMessage(JobHandler.MESSAGE_DEQUEUE,
                     DeleteJob.this);
@@ -1144,7 +1125,7 @@ public class JobService extends Service {
         List<String> mToBeDisabled;
         List<String> mToBeEnabled;
 
-        public ProfileJob(String _name, List<String> _toBeDisabled, List<String> _toBeEnabled) {
+        ProfileJob(String _name, List<String> _toBeDisabled, List<String> _toBeEnabled) {
             mProfileName = _name;
             mToBeDisabled = _toBeDisabled;
             mToBeEnabled = _toBeEnabled;
@@ -1152,11 +1133,10 @@ public class JobService extends Service {
 
         @Override
         public void run() {
-            boolean restartUi = false;
             log("Applying profile...");
 
             // Need to restart SystemUI?
-            restartUi = shouldRestartUi(mToBeEnabled) || shouldRestartUi(mToBeDisabled);
+            boolean restartUi = shouldRestartUi(mToBeDisabled);
 
             // Clear system theme folder content
             File themeDir = new File(IOUtils.SYSTEM_THEME_PATH);
@@ -1201,7 +1181,7 @@ public class JobService extends Service {
 
             // Restart SystemUI when needed
             if (restartUi) {
-                synchronized(mJobQueue) {
+                synchronized (mJobQueue) {
                     mJobQueue.add(new UiResetJob());
                 }
             }
@@ -1214,7 +1194,6 @@ public class JobService extends Service {
 
     private class LocaleChanger extends BroadcastReceiver implements Runnable {
         private boolean mIsRegistered;
-        private boolean mDoRestore;
         private Context mContext;
         private Handler mHandler;
         private Locale mCurrentLocale;
@@ -1229,12 +1208,7 @@ public class JobService extends Service {
             Intent i = new Intent(Intent.ACTION_MAIN);
             i.addCategory(Intent.CATEGORY_HOME);
             mContext.startActivity(i);
-            mHandler.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    spoofLocale();
-                }
-            }, 500);
+            mHandler.postDelayed(this::spoofLocale, 500);
         }
 
         private void register() {
@@ -1253,9 +1227,10 @@ public class JobService extends Service {
             }
         }
 
+        @SuppressWarnings("deprecation")
         private void spoofLocale() {
             Configuration config;
-            log("LocaleChanger - spoofing locale for configuation change shim");
+            log("LocaleChanger - spoofing locale for configuration change shim...");
             try {
                 register();
                 config = ActivityManagerNative.getDefault().getConfiguration();
@@ -1269,13 +1244,12 @@ public class JobService extends Service {
                 ActivityManagerNative.getDefault().updateConfiguration(config);
             } catch (RemoteException e) {
                 e.printStackTrace();
-                return;
             }
         }
 
         private void restoreLocale() {
             Configuration config;
-            log("LocaleChanger - restoring original locale for configuation change shim");
+            log("LocaleChanger - restoring original locale for configuration change shim...");
             try {
                 unregister();
                 config = ActivityManagerNative.getDefault().getConfiguration();
@@ -1293,40 +1267,7 @@ public class JobService extends Service {
 
         @Override
         public void onReceive(Context context, Intent intent) {
-            mHandler.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    restoreLocale();
-                }
-            }, 500);
-        }
-    }
-
-    private static class LocalIntentReceiver {
-        private final SynchronousQueue<Intent> mResult = new SynchronousQueue<>();
-
-        private IIntentSender.Stub mLocalSender = new IIntentSender.Stub() {
-            @Override
-            public void send(int code, Intent intent, String resolvedType,
-                    IIntentReceiver finishedReceiver, String requiredPermission, Bundle options) {
-                try {
-                    mResult.offer(intent, 5, TimeUnit.SECONDS);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        };
-
-        public IntentSender getIntentSender() {
-            return new IntentSender((IIntentSender) mLocalSender);
-        }
-
-        public Intent getResult() {
-            try {
-                return mResult.take();
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
+            mHandler.postDelayed(this::restoreLocale, 500);
         }
     }
 }

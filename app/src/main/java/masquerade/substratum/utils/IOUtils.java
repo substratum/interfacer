@@ -1,5 +1,27 @@
+/*
+ * Copyright (c) 2017 Project Substratum
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ * Also add information on how to contact you by electronic and paper mail.
+ *
+ */
 
 package masquerade.substratum.utils;
+
+import android.os.FileUtils;
+import android.util.Log;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -11,8 +33,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
-
-import android.os.FileUtils;
 
 public class IOUtils {
     public static final String SYSTEM_THEME_PATH = "/data/system/theme";
@@ -31,12 +51,12 @@ public class IOUtils {
     public static final String SYSTEM_THEME_BOOTANIMATION_PATH = SYSTEM_THEME_PATH + File.separator
             + "bootanimation.zip";
 
-    public static boolean dirExists(String dirPath) {
+    private static boolean dirExists(String dirPath) {
         final File dir = new File(dirPath);
         return dir.exists() && dir.isDirectory();
     }
 
-    public static void createDirIfNotExists(String dirPath) {
+    private static void createDirIfNotExists(String dirPath) {
         if (!dirExists(dirPath)) {
             File dir = new File(dirPath);
             if (dir.mkdir()) {
@@ -80,17 +100,17 @@ public class IOUtils {
 
     public static void deleteThemedAudio() {
         try {
-            deleteRecursive(new File(SYSTEM_THEME_UI_SOUNDS_PATH));
-            deleteRecursive(new File(SYSTEM_THEME_RINGTONE_PATH));
-            deleteRecursive(new File(SYSTEM_THEME_NOTIFICATION_PATH));
-            deleteRecursive(new File(SYSTEM_THEME_ALARM_PATH));
+            deleteRecursive(new File(SYSTEM_THEME_AUDIO_PATH));
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
     public static void copyFolder(File source, File dest) {
-        if (!dest.exists()) dest.mkdirs();
+        if (!dest.exists()) {
+            boolean created = dest.mkdirs();
+            if (!created) Log.e("CopyFolder", "Could not create destination folder...");
+        }
         File[] files = source.listFiles();
         for (File file : files) {
             try {
@@ -172,7 +192,9 @@ public class IOUtils {
             for (File child : fileOrDirectory.listFiles())
                 deleteRecursive(child);
 
-        fileOrDirectory.delete();
+        boolean deleted = fileOrDirectory.delete();
+        if (!deleted) Log.e("DeleteRecursive", "Could not delete file or directory - \'" +
+                fileOrDirectory.getName() + "\'");
     }
 
     public static void setPermissions(File path, int permissions) {
