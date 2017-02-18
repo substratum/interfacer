@@ -103,6 +103,7 @@ public class JobService extends Service {
     public static final String COMMAND_VALUE_MOVE = "move";
     public static final String COMMAND_VALUE_DELETE = "delete";
     public static final String COMMAND_VALUE_PROFILE = "profile";
+    public static final String COMMAND_VALUE_MKDIR = "mkdir";
     private static final String TAG = JobService.class.getSimpleName();
     private static final boolean DEBUG = true;
     private static final String MASQUERADE_TOKEN = "masquerade_token";
@@ -227,6 +228,9 @@ public class JobService extends Service {
             String source = intent.getStringExtra(SOURCE_FILE_KEY);
             String destination = intent.getStringExtra(DESTINATION_FILE_KEY);
             jobs_to_add.add(new MoveJob(source, destination));
+        } else if (TextUtils.equals(command, COMMAND_VALUE_MKDIR)) {
+            String destination = intent.getStringExtra(DESTINATION_FILE_KEY);
+            jobs_to_add.add(new MkdirJob(destination));
         } else if (TextUtils.equals(command, COMMAND_VALUE_DELETE)) {
             String dir = intent.getStringExtra(SOURCE_FILE_KEY);
             if (intent.getBooleanExtra(WITH_DELETE_PARENT_KEY, true)) {
@@ -656,6 +660,7 @@ public class JobService extends Service {
     }
 
     private void copyBootAnimation(String fileName) {
+        IOUtils.createThemeDirIfNotExists();
         try {
             clearBootAnimation();
             File source = new File(fileName);
@@ -1094,6 +1099,24 @@ public class JobService extends Service {
             }
             Message message = mJobHandler.obtainMessage(JobHandler.MESSAGE_DEQUEUE,
                     MoveJob.this);
+            mJobHandler.sendMessage(message);
+        }
+    }
+
+    private class MkdirJob implements Runnable {
+        String mDestination;
+
+        public MkdirJob(String destination) {
+            mDestination = destination;
+        }
+
+        @Override
+        public void run() {
+            log("MkdirJob - creating \'" + mDestination + "\'...");
+            IOUtils.createDirIfNotExists(mDestination);
+
+            Message message = mJobHandler.obtainMessage(JobHandler.MESSAGE_DEQUEUE,
+                    MkdirJob.this);
             mJobHandler.sendMessage(message);
         }
     }

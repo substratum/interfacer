@@ -56,7 +56,7 @@ public class IOUtils {
         return dir.exists() && dir.isDirectory();
     }
 
-    private static void createDirIfNotExists(String dirPath) {
+    public static void createDirIfNotExists(String dirPath) {
         if (!dirExists(dirPath)) {
             File dir = new File(dirPath);
             if (dir.mkdir()) {
@@ -64,6 +64,10 @@ public class IOUtils {
                         FileUtils.S_IROTH | FileUtils.S_IXOTH);
             }
         }
+    }
+
+    public static void createThemeDirIfNotExists() {
+        createDirIfNotExists(SYSTEM_THEME_PATH);
     }
 
     public static void createFontDirIfNotExists() {
@@ -177,7 +181,8 @@ public class IOUtils {
             BufferedOutputStream out = new BufferedOutputStream(dest);
             byte[] buff = new byte[32 * 1024];
             int len;
-            while ((len = in.read(buff)) > 0) {
+            // Let's bulletproof this a bit
+            while ((len = in.read(buff)) != -1) {
                 out.write(buff, 0, len);
             }
             in.close();

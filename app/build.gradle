@@ -20,8 +20,6 @@ android {
         applicationId "masquerade.substratum"
         minSdkVersion 25
         targetSdkVersion 25
-        versionCode 23
-        versionName "twenty three"
     }
 
     defaultConfig {
