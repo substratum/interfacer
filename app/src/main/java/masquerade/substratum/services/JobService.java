@@ -76,6 +76,7 @@ public class JobService extends Service {
     public static final String JOB_TIME_KEY = "job_time_key";
     public static final String INSTALL_LIST_KEY = "install_list";
     public static final String UNINSTALL_LIST_KEY = "uninstall_list";
+    public static final String WITH_RESTART_UI_KEY = "with_restart_ui";
     public static final String BOOTANIMATION_FILE_NAME = "bootanimation_file_name";
     public static final String FONTS_PID = "fonts_pid";
     public static final String FONTS_FILENAME = "fonts_filename";
@@ -186,7 +187,9 @@ public class JobService extends Service {
         } else if (TextUtils.equals(command, COMMAND_VALUE_UNINSTALL)) {
             List<String> packages = intent.getStringArrayListExtra(UNINSTALL_LIST_KEY);
             jobs_to_add.addAll(packages.stream().map(Remover::new).collect(Collectors.toList()));
-            if (shouldRestartUi(packages)) jobs_to_add.add(new UiResetJob());
+            if (intent.getBooleanExtra(WITH_RESTART_UI_KEY, false)) {
+                jobs_to_add.add(new UiResetJob());
+            }
         } else if (TextUtils.equals(command, COMMAND_VALUE_RESTART_UI)) {
             jobs_to_add.add(new UiResetJob());
         } else if (TextUtils.equals(command, COMMAND_VALUE_CONFIGURATION_SHIM)) {
@@ -211,15 +214,21 @@ public class JobService extends Service {
         } else if (TextUtils.equals(command, COMMAND_VALUE_ENABLE)) {
             List<String> packages = intent.getStringArrayListExtra(ENABLE_LIST_KEY);
             jobs_to_add.addAll(packages.stream().map(Enabler::new).collect(Collectors.toList()));
-            if (shouldRestartUi(packages)) jobs_to_add.add(new UiResetJob());
+            if (intent.getBooleanExtra(WITH_RESTART_UI_KEY, false)) {
+                jobs_to_add.add(new UiResetJob());
+            }
         } else if (TextUtils.equals(command, COMMAND_VALUE_DISABLE)) {
             List<String> packages = intent.getStringArrayListExtra(DISABLE_LIST_KEY);
             jobs_to_add.addAll(packages.stream().map(Disabler::new).collect(Collectors.toList()));
-            if (shouldRestartUi(packages)) jobs_to_add.add(new UiResetJob());
+            if (intent.getBooleanExtra(WITH_RESTART_UI_KEY, false)) {
+                jobs_to_add.add(new UiResetJob());
+            }
         } else if (TextUtils.equals(command, COMMAND_VALUE_PRIORITY)) {
             List<String> packages = intent.getStringArrayListExtra(PRIORITY_LIST_KEY);
             jobs_to_add.add(new PriorityJob(packages));
-            if (shouldRestartUi(packages)) jobs_to_add.add(new UiResetJob());
+            if (intent.getBooleanExtra(WITH_RESTART_UI_KEY, false)) {
+                jobs_to_add.add(new UiResetJob());
+            }
         } else if (TextUtils.equals(command, COMMAND_VALUE_COPY)) {
             String source = intent.getStringExtra(SOURCE_FILE_KEY);
             String destination = intent.getStringExtra(DESTINATION_FILE_KEY);
@@ -243,8 +252,9 @@ public class JobService extends Service {
         } else if (TextUtils.equals(command, COMMAND_VALUE_PROFILE)) {
             List<String> enable = intent.getStringArrayListExtra(ENABLE_LIST_KEY);
             List<String> disable = intent.getStringArrayListExtra(DISABLE_LIST_KEY);
+            boolean restartUi = intent.getBooleanExtra(WITH_RESTART_UI_KEY, false);
             String profile = intent.getStringExtra(PROFILE_NAME_KEY);
-            jobs_to_add.add(new ProfileJob(profile, disable, enable));
+            jobs_to_add.add(new ProfileJob(profile, disable, enable, restartUi));
         }
 
         if (jobs_to_add.size() > 0) {
@@ -314,13 +324,6 @@ public class JobService extends Service {
             e.printStackTrace();
         }
         return enabled;
-    }
-
-    private boolean shouldRestartUi(List<String> overlays) {
-        for (String o : overlays) {
-            if (o.startsWith("com.android.systemui")) return true;
-        }
-        return false;
     }
 
     private void copyFonts(String pid, String zipFileName) {
@@ -1147,19 +1150,19 @@ public class JobService extends Service {
         String mProfileName;
         List<String> mToBeDisabled;
         List<String> mToBeEnabled;
+        boolean mRestartUi;
 
-        ProfileJob(String _name, List<String> _toBeDisabled, List<String> _toBeEnabled) {
+        ProfileJob(String _name, List<String> _toBeDisabled,
+                List<String> _toBeEnabled, boolean _restartUi) {
             mProfileName = _name;
             mToBeDisabled = _toBeDisabled;
             mToBeEnabled = _toBeEnabled;
+            mRestartUi = _restartUi;
         }
 
         @Override
         public void run() {
             log("Applying profile...");
-
-            // Need to restart SystemUI?
-            boolean restartUi = shouldRestartUi(mToBeDisabled);
 
             // Clear system theme folder content
             File themeDir = new File(IOUtils.SYSTEM_THEME_PATH);
@@ -1177,7 +1180,7 @@ public class JobService extends Service {
                 if (profileFonts.exists()) {
                     IOUtils.copyFolder(profileFonts, new File(IOUtils.SYSTEM_THEME_FONT_PATH));
                     refreshFonts();
-                    restartUi = true;
+                    mRestartUi = true;
                 } else {
                     clearFonts();
                 }
@@ -1186,7 +1189,7 @@ public class JobService extends Service {
                 if (profileSounds.exists()) {
                     IOUtils.copyFolder(profileSounds, new File(IOUtils.SYSTEM_THEME_AUDIO_PATH));
                     refreshSounds();
-                    restartUi = true;
+                    mRestartUi = true;
                 } else {
                     clearSounds(JobService.this);
                 }
@@ -1203,7 +1206,7 @@ public class JobService extends Service {
             }
 
             // Restart SystemUI when needed
-            if (restartUi) {
+            if (mRestartUi) {
                 synchronized (mJobQueue) {
                     mJobQueue.add(new UiResetJob());
                 }
