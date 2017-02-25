@@ -34,12 +34,15 @@ import android.content.om.OverlayInfo;
 import android.content.pm.IPackageDeleteObserver;
 import android.content.pm.IPackageInstallObserver2;
 import android.content.pm.IPackageManager;
+import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
+import android.content.pm.Signature;
 import android.content.res.AssetManager;
 import android.content.res.Configuration;
 import android.graphics.Typeface;
 import android.media.RingtoneManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.FileUtils;
@@ -659,6 +662,36 @@ public class JobService extends Service {
         return ctx;
     }
 
+    private static boolean isDebugBuild() {
+        return Build.TYPE.equals("eng") || Build.TYPE.equals("userdebug");
+    }
+
+    private static boolean shouldCheckBuildType() {
+        return SystemProperties.getBoolean("ro.masquerade.buildtype.check", false);
+    }
+
+    private boolean forceAuthorizePackages() {
+        return Settings.Secure.getIntForUser(getContentResolver(),
+                Settings.Secure.FORCE_AUTHORIZE_SUBSTRATUM_PACKAGES, 0, UserHandle.USER_CURRENT) == 1;
+    }
+
+    private boolean doSignaturesMatch(String packageName, Signature signature) {
+        if (packageName != null) {
+              try {
+                  PackageInfo pi = getPM().getPackageInfo(packageName,
+                        PackageManager.GET_SIGNATURES, UserHandle.USER_SYSTEM);
+                  if (pi.signatures != null
+                           && pi.signatures.length == 1
+                           && signature.equals(pi.signatures[0])) {
+                        return true;
+                  }
+              } catch (RemoteException ignored) {
+                  return false;
+              }
+       }
+       return false;
+    }
+
     private boolean isCallerAuthorized(Intent intent) {
         PendingIntent token = null;
 
@@ -675,23 +708,34 @@ public class JobService extends Service {
         // SECOND: We got a token, validate originating package
         // if not in our white list, return null
         String callingPackage = token.getCreatorPackage();
-        boolean isValidPackage = false;
         for (String AUTHORIZED_CALLER : AUTHORIZED_CALLERS) {
             if (TextUtils.equals(callingPackage, AUTHORIZED_CALLER)) {
-                log("\'" + callingPackage
-                        + "\' is an authorized calling package, validating calling package " +
-                        "permissions...");
-                isValidPackage = true;
-                break;
+                for (Signature AUTHORIZED_SIGNATURE : AUTHORIZED_SIGNATURES) {
+                    if (doSignaturesMatch(callingPackage, AUTHORIZED_SIGNATURE)) {
+                        log("\'" + callingPackage
+                                + "\' is an authorized calling package, validating calling package " +
+                                "permissions...");
+                        return true;
+                    }
+               }
             }
         }
 
-        if (!isValidPackage) {
-            log("\'" + callingPackage + "\' is not an authorized calling package.");
-            return false;
+        if (shouldCheckBuildType() && isDebugBuild()) {
+            log("the ROM is a userdebug or eng build configured to allow all packages," +
+                    "validating calling package permissions...");
+            return true;
         }
 
-        return true;
+       if (forceAuthorizePackages()) {
+            log("\'" + callingPackage + "\' is not an authorized calling package, but the user " +
+                    "has explicitly allowed all calling packages, " +
+                    "validating calling package permissions...");
+            return true;
+        }
+
+        log("\'" + callingPackage + "\' is not an authorized calling package.");
+        return false;
     }
 
     private class MainHandler extends Handler {
@@ -1292,4 +1336,29 @@ public class JobService extends Service {
             mHandler.postDelayed(this::restoreLocale, 500);
         }
     }
+
+    private static final Signature SUBSTRATUM_SIGNATURE = new Signature(""
+            + "308202eb308201d3a003020102020411c02f2f300d06092a864886f70d01010b050030263124302206"
+            + "03550403131b5375627374726174756d20446576656c6f706d656e74205465616d301e170d31363037"
+            + "30333032333335385a170d3431303632373032333335385a3026312430220603550403131b53756273"
+            + "74726174756d20446576656c6f706d656e74205465616d30820122300d06092a864886f70d01010105"
+            + "000382010f003082010a02820101008855626336f645a335aa5d40938f15db911556385f72f72b5f8b"
+            + "ad01339aaf82ae2d30302d3f2bba26126e8da8e76a834e9da200cdf66d1d5977c90a4e4172ce455704"
+            + "a22bbe4a01b08478673b37d23c34c8ade3ec040a704da8570d0a17fce3c7397ea63ebcde3a2a3c7c5f"
+            + "983a163e4cd5a1fc80c735808d014df54120e2e5708874739e22e5a22d50e1c454b2ae310b480825ab"
+            + "3d877f675d6ac1293222602a53080f94e4a7f0692b627905f69d4f0bb1dfd647e281cc0695e0733fa3"
+            + "efc57d88706d4426c4969aff7a177ac2d9634401913bb20a93b6efe60e790e06dad3493776c2c0878c"
+            + "e82caababa183b494120edde3d823333efd464c8aea1f51f330203010001a321301f301d0603551d0e"
+            + "04160414203ec8b075d1c9eb9d600100281c3924a831a46c300d06092a864886f70d01010b05000382"
+            + "01010042d4bd26d535ce2bf0375446615ef5bf25973f61ecf955bdb543e4b6e6b5d026fdcab09fec09"
+            + "c747fb26633c221df8e3d3d0fe39ce30ca0a31547e9ec693a0f2d83e26d231386ff45f8e4fd5c06095"
+            + "8681f9d3bd6db5e940b1e4a0b424f5c463c79c5748a14a3a38da4dd7a5499dcc14a70ba82a50be5fe0"
+            + "82890c89a27e56067d2eae952e0bcba4d6beb5359520845f1fdb7df99868786055555187ba46c69ee6"
+            + "7fa2d2c79e74a364a8b3544997dc29cc625395e2f45bf8bdb2c9d8df0d5af1a59a58ad08b32cdbec38"
+            + "19fa49201bb5b5aadeee8f2f096ac029055713b77054e8af07cd61fe97f7365d0aa92d570be98acb89"
+            + "41b8a2b0053b54f18bfde092eb");
+
+    private static final Signature[] AUTHORIZED_SIGNATURES = new Signature[]{
+            SUBSTRATUM_SIGNATURE,
+    };
 }
