@@ -16,7 +16,7 @@ Add "masquerade" under PRODUCT_PACKAGES in "vendor/config/common.mk"
     
 Add the project path in "platform_manifest/default.xml"
 
-    <project path="packages/apps/masquerade" name="TeamSubstratum/masquerade" remote="github" revision="master" />
+    <project path="packages/apps/masquerade" name="substratum/masquerade" remote="github" revision="n-rootless" />
 
 ## An example is found here:
 platform_manifest/default.xml:
