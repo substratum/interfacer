@@ -4,8 +4,8 @@
           coreApp="true"
           package="masquerade.substratum"
           android:sharedUserId="android.uid.system"
-          android:versionCode="23"
-          android:versionName="twenty three"
+          android:versionCode="24"
+          android:versionName="twenty four"
           tools:ignore="GradleOverrides">
 
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
@@ -27,9 +27,9 @@
     <application
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
-        android:label="@string/app_name"
+        android:label="masquerade"
         android:supportsRtl="true"
-        android:theme="@style/AppTheme"
+        android:theme="@android:style/Theme.NoDisplay"
         tools:ignore="GoogleAppIndexingWarning">
         <service
             android:name=".services.JobService"

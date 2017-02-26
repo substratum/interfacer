@@ -1109,7 +1109,7 @@ public class JobService extends Service {
     private class MkdirJob implements Runnable {
         String mDestination;
 
-        public MkdirJob(String destination) {
+        MkdirJob(String destination) {
             mDestination = destination;
         }
 
@@ -1153,7 +1153,7 @@ public class JobService extends Service {
         boolean mRestartUi;
 
         ProfileJob(String _name, List<String> _toBeDisabled,
-                List<String> _toBeEnabled, boolean _restartUi) {
+                   List<String> _toBeEnabled, boolean _restartUi) {
             mProfileName = _name;
             mToBeDisabled = _toBeDisabled;
             mToBeEnabled = _toBeEnabled;

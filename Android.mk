@@ -1,5 +1,5 @@
 #
-# Inline Aosp Makefile for Masquerade
+# Inline AOSP Makefile for Masquerade
 #
 LOCAL_PATH:= $(call my-dir)
 
