@@ -127,6 +127,7 @@ public class JobService extends Service {
         new Sound(IOUtils.SYSTEM_THEME_NOTIFICATION_PATH, "/SoundsCache/notifications/", "notification", "notification", RingtoneManager.TYPE_NOTIFICATION),
         new Sound(IOUtils.SYSTEM_THEME_RINGTONE_PATH, "/SoundsCache/ringtones/", "ringtone", "ringtone", RingtoneManager.TYPE_RINGTONE)
     );
+    private static final String INTENT_CALLER_AUTHORIZED = "masquerade.substratum.CALLER_AUTHORIZED";
     private static IOverlayManager mOMS;
     private static IPackageManager mPM;
     private final List<Runnable> mJobQueue = new ArrayList<>(0);
@@ -172,8 +173,13 @@ public class JobService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        // verify identity
-        if (!isCallerAuthorized(intent)) {
+        // Verify identity
+        boolean authorized = isCallerAuthorized(intent);
+
+        // Broadcast authorization result
+        informCaller(authorized);
+
+        if (!authorized) {
             log("caller not authorized, aborting");
             return START_NOT_STICKY;
         }
@@ -736,6 +742,12 @@ public class JobService extends Service {
 
         log("\'" + callingPackage + "\' is not an authorized calling package.");
         return false;
+    }
+
+    private void informCaller(boolean result) {
+        Intent intent = new Intent(INTENT_CALLER_AUTHORIZED);
+        intent.putExtra("isCallerAuthorized", result);
+        sendBroadcastAsUser(intent, UserHandle.ALL);
     }
 
     private class MainHandler extends Handler {
