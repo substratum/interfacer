@@ -128,9 +128,10 @@ public class SoundUtils {
 
         if (c != null && c.getCount() > 0) {
             c.moveToFirst();
-            long id = c.getLong(0);
+            String id = String.valueOf(c.getLong(0));
             c.close();
-            newUri = Uri.withAppendedPath(Uri.parse(MEDIA_CONTENT_URI), "" + id);
+
+            newUri = Uri.withAppendedPath(Uri.parse(MEDIA_CONTENT_URI), id);
             context.getContentResolver().update(uri, values,
                     MediaStore.MediaColumns._ID + "=" + id, null);
         }
@@ -175,10 +176,11 @@ public class SoundUtils {
 
         if (c != null && c.getCount() > 0) {
             c.moveToFirst();
-            long id = c.getLong(0);
-            Log.e(TAG, id + "");
+            String id = String.valueOf(c.getLong(0));
             c.close();
-            newUri = Uri.withAppendedPath(Uri.parse(MEDIA_CONTENT_URI), "" + id);
+
+            Log.e(TAG, id);
+            newUri = Uri.withAppendedPath(Uri.parse(MEDIA_CONTENT_URI), id);
 
             try {
                 context.getContentResolver().update(uri, values,
@@ -218,9 +220,10 @@ public class SoundUtils {
 
         if (c != null && c.getCount() > 0) {
             c.moveToFirst();
-            long id = c.getLong(0);
+            String id = String.valueOf(c.getLong(0));
             c.close();
-            uri = Uri.withAppendedPath(Uri.parse(MEDIA_CONTENT_URI), "" + id);
+
+            uri = Uri.withAppendedPath(Uri.parse(MEDIA_CONTENT_URI), id);
         }
 
         if (uri != null) {
