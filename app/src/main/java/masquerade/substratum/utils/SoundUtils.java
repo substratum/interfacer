@@ -56,6 +56,7 @@ public class SoundUtils {
             updateGlobalSettings(resolver, sound_name, location);
             return true;
         }
+
         return false;
     }
 
@@ -71,12 +72,14 @@ public class SoundUtils {
                 "unlock_sound",
                 "low_battery_sound"
         };
+
         return Arrays.asList(allowed_themable).contains(targetValue);
     }
 
     private static String getDefaultAudiblePath(int type) {
         final String name;
         final String path;
+
         switch (type) {
             case RingtoneManager.TYPE_ALARM:
                 name = SystemProperties.get("ro.config.alarm_alert");
@@ -94,6 +97,7 @@ public class SoundUtils {
                 path = null;
                 break;
         }
+
         return path;
     }
 
@@ -102,6 +106,7 @@ public class SoundUtils {
         final String path = ringtone.getAbsolutePath();
         final String mimeType = name.endsWith(".ogg") ? "application/ogg" : "application/mp3";
         ContentValues values = new ContentValues();
+
         values.put(MediaStore.MediaColumns.DATA, path);
         values.put(MediaStore.MediaColumns.TITLE, name);
         values.put(MediaStore.MediaColumns.MIME_TYPE, mimeType);
@@ -120,6 +125,7 @@ public class SoundUtils {
                 },
                 MediaStore.MediaColumns.DATA + "='" + path + "'",
                 null, null);
+
         if (c != null && c.getCount() > 0) {
             c.moveToFirst();
             long id = c.getLong(0);
@@ -128,13 +134,17 @@ public class SoundUtils {
             context.getContentResolver().update(uri, values,
                     MediaStore.MediaColumns._ID + "=" + id, null);
         }
-        if (newUri == null)
+
+        if (newUri == null) {
             newUri = context.getContentResolver().insert(uri, values);
+        }
+
         try {
             RingtoneManager.setActualDefaultRingtoneUri(context, type, newUri);
         } catch (Exception e) {
             return false;
         }
+
         return true;
     }
 
@@ -162,12 +172,14 @@ public class SoundUtils {
                 },
                 MediaStore.MediaColumns.DATA + "='" + path_clone + "'",
                 null, null);
+
         if (c != null && c.getCount() > 0) {
             c.moveToFirst();
             long id = c.getLong(0);
             Log.e(TAG, id + "");
             c.close();
             newUri = Uri.withAppendedPath(Uri.parse(MEDIA_CONTENT_URI), "" + id);
+
             try {
                 context.getContentResolver().update(uri, values,
                         MediaStore.MediaColumns._ID + "=" + id, null);
@@ -175,39 +187,46 @@ public class SoundUtils {
                 Log.d(TAG, "The content provider does not need to be updated.");
             }
         }
-        if (newUri == null)
+
+        if (newUri == null) {
             newUri = context.getContentResolver().insert(uri, values);
+        }
+
         try {
             RingtoneManager.setActualDefaultRingtoneUri(context, type, newUri);
         } catch (Exception e) {
             Log.e(TAG, "", e);
             return false;
         }
+
         return true;
     }
 
     public static boolean setDefaultAudible(Context context, int type) {
         final String audiblePath = getDefaultAudiblePath(type);
-        if (audiblePath != null) {
-            Uri uri = MediaStore.Audio.Media.getContentUriForPath(audiblePath);
-            Cursor c = context.getContentResolver().query(uri,
-                    new String[]{
-                            MediaStore.MediaColumns._ID
-                    },
-                    MediaStore.MediaColumns.DATA + "='" + audiblePath + "'",
-                    null, null);
-            if (c != null && c.getCount() > 0) {
-                c.moveToFirst();
-                long id = c.getLong(0);
-                c.close();
-                uri = Uri.withAppendedPath(
-                        Uri.parse(MEDIA_CONTENT_URI), "" + id);
-            }
-            if (uri != null)
-                RingtoneManager.setActualDefaultRingtoneUri(context, type, uri);
-        } else {
+        if (audiblePath == null) {
             return false;
         }
+
+        Uri uri = MediaStore.Audio.Media.getContentUriForPath(audiblePath);
+        Cursor c = context.getContentResolver().query(uri,
+                new String[]{
+                        MediaStore.MediaColumns._ID
+                },
+                MediaStore.MediaColumns.DATA + "='" + audiblePath + "'",
+                null, null);
+
+        if (c != null && c.getCount() > 0) {
+            c.moveToFirst();
+            long id = c.getLong(0);
+            c.close();
+            uri = Uri.withAppendedPath(Uri.parse(MEDIA_CONTENT_URI), "" + id);
+        }
+
+        if (uri != null) {
+            RingtoneManager.setActualDefaultRingtoneUri(context, type, uri);
+        }
+
         return true;
     }
 }
