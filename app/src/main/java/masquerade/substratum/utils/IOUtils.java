@@ -35,6 +35,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 public class IOUtils {
+    private static final String TAG = IOUtils.class.getSimpleName();
     public static final String SYSTEM_THEME_PATH = "/data/system/theme";
     public static final String SYSTEM_THEME_FONT_PATH = SYSTEM_THEME_PATH + File.separator
             + "fonts";
@@ -98,7 +99,7 @@ public class IOUtils {
         try {
             deleteRecursive(new File(SYSTEM_THEME_FONT_PATH));
         } catch (Exception e) {
-            Log.e("DeleteThemedAudio", "", e);
+            Log.e(TAG, "", e);
         }
     }
 
@@ -106,14 +107,14 @@ public class IOUtils {
         try {
             deleteRecursive(new File(SYSTEM_THEME_AUDIO_PATH));
         } catch (Exception e) {
-            Log.e("DeleteThemedAudio", "", e);
+            Log.e(TAG, "", e);
         }
     }
 
     public static void copyFolder(File source, File dest) {
         if (!dest.exists()) {
             boolean created = dest.mkdirs();
-            if (!created) Log.e("CopyFolder", "Could not create destination folder...");
+            if (!created) Log.e(TAG, "Could not create destination folder...");
         }
         File[] files = source.listFiles();
         for (File file : files) {
@@ -126,7 +127,7 @@ public class IOUtils {
                     copyFolder(file, newFile);
                 }
             } catch (Exception e) {
-                Log.e("CopyFolder", "", e);
+                Log.e(TAG, "", e);
             }
         }
     }
@@ -155,7 +156,7 @@ public class IOUtils {
                 }
             }
         } catch (Exception e) {
-            Log.e("unzip", "", e);
+            Log.e(TAG, "", e);
         }
     }
 
@@ -163,7 +164,7 @@ public class IOUtils {
         try {
             bufferedCopy(new FileInputStream(source), new FileOutputStream(dest));
         } catch (Exception e) {
-            Log.e("BufferedCopy", "", e);
+            Log.e(TAG, "", e);
         }
     }
 
@@ -171,7 +172,7 @@ public class IOUtils {
         try {
             bufferedCopy(new FileInputStream(source), new FileOutputStream(dest));
         } catch (Exception e) {
-            Log.e("BufferedCopy", "", e);
+            Log.e(TAG, "", e);
         }
     }
 
@@ -188,7 +189,7 @@ public class IOUtils {
             in.close();
             out.close();
         } catch (Exception e) {
-            Log.e("BufferedCopy", "", e);
+            Log.e(TAG, "", e);
         }
     }
 
@@ -198,7 +199,7 @@ public class IOUtils {
                 deleteRecursive(child);
 
         boolean deleted = fileOrDirectory.delete();
-        if (!deleted) Log.e("DeleteRecursive", "Could not delete file or directory - \'" +
+        if (!deleted) Log.e(TAG, "Could not delete file or directory - \'" +
                 fileOrDirectory.getName() + "\'");
     }
 

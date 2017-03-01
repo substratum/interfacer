@@ -36,6 +36,7 @@ import java.io.File;
 import java.util.Arrays;
 
 public class SoundUtils {
+    private static final String TAG = SoundUtils.class.getSimpleName();
     private static final String SYSTEM_MEDIA_PATH = "/system/media/audio";
     private static final String SYSTEM_ALARMS_PATH =
             SYSTEM_MEDIA_PATH + File.separator + "alarms";
@@ -164,14 +165,14 @@ public class SoundUtils {
         if (c != null && c.getCount() > 0) {
             c.moveToFirst();
             long id = c.getLong(0);
-            Log.e("ContentResolver", id + "");
+            Log.e(TAG, id + "");
             c.close();
             newUri = Uri.withAppendedPath(Uri.parse(MEDIA_CONTENT_URI), "" + id);
             try {
                 context.getContentResolver().update(uri, values,
                         MediaStore.MediaColumns._ID + "=" + id, null);
             } catch (Exception e) {
-                Log.d("SoundsHandler", "The content provider does not need to be updated.");
+                Log.d(TAG, "The content provider does not need to be updated.");
             }
         }
         if (newUri == null)
@@ -179,7 +180,7 @@ public class SoundUtils {
         try {
             RingtoneManager.setActualDefaultRingtoneUri(context, type, newUri);
         } catch (Exception e) {
-            Log.e("SetUIAudible", "", e);
+            Log.e(TAG, "", e);
             return false;
         }
         return true;
