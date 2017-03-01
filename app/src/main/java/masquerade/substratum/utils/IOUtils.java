@@ -98,7 +98,7 @@ public class IOUtils {
         try {
             deleteRecursive(new File(SYSTEM_THEME_FONT_PATH));
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.e("DeleteThemedAudio", "", e);
         }
     }
 
@@ -106,7 +106,7 @@ public class IOUtils {
         try {
             deleteRecursive(new File(SYSTEM_THEME_AUDIO_PATH));
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.e("DeleteThemedAudio", "", e);
         }
     }
 
@@ -126,7 +126,7 @@ public class IOUtils {
                     copyFolder(file, newFile);
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                Log.e("CopyFolder", "", e);
             }
         }
     }
@@ -155,7 +155,7 @@ public class IOUtils {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.e("unzip", "", e);
         }
     }
 
@@ -163,7 +163,7 @@ public class IOUtils {
         try {
             bufferedCopy(new FileInputStream(source), new FileOutputStream(dest));
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.e("BufferedCopy", "", e);
         }
     }
 
@@ -171,7 +171,7 @@ public class IOUtils {
         try {
             bufferedCopy(new FileInputStream(source), new FileOutputStream(dest));
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.e("BufferedCopy", "", e);
         }
     }
 
@@ -188,7 +188,7 @@ public class IOUtils {
             in.close();
             out.close();
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.e("BufferedCopy", "", e);
         }
     }
 

@@ -290,7 +290,7 @@ public class JobService extends Service {
                     null,
                     UserHandle.USER_SYSTEM);
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.e(TAG, "", e);
         }
     }
 
@@ -299,7 +299,7 @@ public class JobService extends Service {
         try {
             getPM().deletePackageAsUser(packageName, observer, 0, UserHandle.USER_SYSTEM);
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.e(TAG, "", e);
         }
     }
 
@@ -307,7 +307,7 @@ public class JobService extends Service {
         try {
             getOMS().setEnabled(packageName, enable, UserHandle.USER_SYSTEM, false);
         } catch (RemoteException e) {
-            e.printStackTrace();
+            Log.e(TAG, "", e);
         }
     }
 
@@ -321,7 +321,7 @@ public class JobService extends Service {
                 log("OverlayInfo is null.");
             }
         } catch (RemoteException e) {
-            e.printStackTrace();
+            Log.e(TAG, "", e);
         }
         return enabled;
     }
@@ -354,7 +354,7 @@ public class JobService extends Service {
                     .getAbsolutePath() + "/FontCache/" + zipFileName);
             IOUtils.bufferedCopy(inputStream, outputStream);
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.e(TAG, "", e);
         }
 
         // Unzip new fonts and delete zip file, overwriting any system fonts
@@ -375,7 +375,7 @@ public class JobService extends Service {
                 IOUtils.bufferedCopy(inputStream, outputStream);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.e(TAG, "", e);
         }
 
         // Prepare system theme fonts folder and copy new fonts folder from our cache
@@ -437,7 +437,7 @@ public class JobService extends Service {
                     .getAbsolutePath() + "/SoundsCache/" + zipFileName);
             IOUtils.bufferedCopy(inputStream, outputStream);
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.e(TAG, "", e);
         }
 
         // Unzip new sounds and delete zip file
@@ -674,7 +674,7 @@ public class JobService extends Service {
             IOUtils.setPermissions(dest,
                     FileUtils.S_IRWXU | FileUtils.S_IRGRP | FileUtils.S_IROTH);
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.e(TAG, "", e);
         }
     }
 
@@ -686,7 +686,7 @@ public class JobService extends Service {
                 if (!deleted) log("Could not delete themed boot animation...");
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.e(TAG, "", e);
         }
     }
 
@@ -709,7 +709,7 @@ public class JobService extends Service {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.e(TAG, "", e);
         }
     }
 
@@ -723,7 +723,7 @@ public class JobService extends Service {
             ctx = getApplicationContext().createPackageContext(packageName,
                     Context.CONTEXT_IGNORE_SECURITY);
         } catch (NameNotFoundException e) {
-            e.printStackTrace();
+            Log.e(TAG, "", e);
         }
         return ctx;
     }
@@ -1041,7 +1041,7 @@ public class JobService extends Service {
                     getOMS().setPriority(packageName, parentName, UserHandle.USER_SYSTEM);
                 }
             } catch (RemoteException e) {
-                e.printStackTrace();
+                Log.e(TAG, "", e);
             }
             Message message = mJobHandler.obtainMessage(JobHandler.MESSAGE_DEQUEUE,
                     PriorityJob.this);
@@ -1269,7 +1269,7 @@ public class JobService extends Service {
                 config.userSetLocale = true;
                 ActivityManagerNative.getDefault().updateConfiguration(config);
             } catch (RemoteException e) {
-                e.printStackTrace();
+                Log.e(TAG, "", e);
             }
         }
 
@@ -1283,7 +1283,7 @@ public class JobService extends Service {
                 config.userSetLocale = true;
                 ActivityManagerNative.getDefault().updateConfiguration(config);
             } catch (RemoteException e) {
-                e.printStackTrace();
+                Log.e(TAG, "", e);
                 return;
             }
             Message message = mJobHandler.obtainMessage(JobHandler.MESSAGE_DEQUEUE,

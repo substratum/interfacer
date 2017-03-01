@@ -179,7 +179,7 @@ public class SoundUtils {
         try {
             RingtoneManager.setActualDefaultRingtoneUri(context, type, newUri);
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.e("SetUIAudible", "", e);
             return false;
         }
         return true;
