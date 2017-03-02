@@ -143,6 +143,7 @@ public class SoundUtils {
         try {
             RingtoneManager.setActualDefaultRingtoneUri(context, type, newUri);
         } catch (Exception e) {
+            Log.e(TAG, "", e);
             return false;
         }
 
@@ -226,8 +227,11 @@ public class SoundUtils {
             uri = Uri.withAppendedPath(Uri.parse(MEDIA_CONTENT_URI), id);
         }
 
-        if (uri != null) {
+        try {
             RingtoneManager.setActualDefaultRingtoneUri(context, type, uri);
+        } catch (Exception e) {
+            Log.e(TAG, "", e);
+            return false;
         }
 
         return true;
