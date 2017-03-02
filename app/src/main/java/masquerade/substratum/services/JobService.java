@@ -97,6 +97,7 @@ public class JobService extends Service {
     public static final String COMMAND_VALUE_INSTALL = "install";
     public static final String COMMAND_VALUE_UNINSTALL = "uninstall";
     public static final String COMMAND_VALUE_RESTART_UI = "restart_ui";
+    public static final String COMMAND_VALUE_RESTART_SERVICE = "restart_service";
     public static final String COMMAND_VALUE_CONFIGURATION_SHIM = "configuration_shim";
     public static final String COMMAND_VALUE_BOOTANIMATION = "bootanimation";
     public static final String COMMAND_VALUE_FONTS = "fonts";
@@ -135,6 +136,7 @@ public class JobService extends Service {
     private MainHandler mMainHandler;
     private long mLastJobTime;
     private boolean mIsRunning;
+    private boolean mShouldRestartService;
 
     private static IOverlayManager getOMS() {
         if (mOMS == null) {
@@ -217,6 +219,8 @@ public class JobService extends Service {
             }
         } else if (TextUtils.equals(command, COMMAND_VALUE_RESTART_UI)) {
             jobs_to_add.add(new UiResetJob());
+        } else if (TextUtils.equals(command, COMMAND_VALUE_RESTART_SERVICE)) {
+            jobs_to_add.add(new RestartServiceJob());
         } else if (TextUtils.equals(command, COMMAND_VALUE_CONFIGURATION_SHIM)) {
             jobs_to_add.add(new LocaleChanger(getApplicationContext(), mMainHandler));
         } else if (TextUtils.equals(command, COMMAND_VALUE_BOOTANIMATION)) {
@@ -313,7 +317,11 @@ public class JobService extends Service {
     }
 
     @Override
-    public void onDestroy() {}
+    public void onDestroy() {
+       if (mShouldRestartService) {
+           startService(new Intent(this, JobService.class));
+       }
+    }
 
     private boolean isProcessing() {
         return mJobQueue.size() > 0;
@@ -651,6 +659,11 @@ public class JobService extends Service {
         }
     }
 
+    private void restartService() {
+        mShouldRestartService = true;
+        stopService(new Intent(this, JobService.class));
+    }
+
     private Context getSubsContext() {
         return getAppContext(SUBSTRATUM_PACKAGE);
     }
@@ -825,6 +838,17 @@ public class JobService extends Service {
             Message message = mJobHandler.obtainMessage(JobHandler.MESSAGE_DEQUEUE,
                     UiResetJob.this);
             mJobHandler.sendMessage(message);
+        }
+    }
+
+    private class RestartServiceJob implements Runnable {
+        @Override
+        public void run() {
+            log("Restarting JobService...");
+            Message message = mJobHandler.obtainMessage(JobHandler.MESSAGE_DEQUEUE,
+                    RestartServiceJob.this);
+            mJobHandler.sendMessage(message);
+            restartService();
         }
     }
 
