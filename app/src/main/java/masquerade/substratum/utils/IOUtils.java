@@ -82,22 +82,6 @@ public class IOUtils {
         createDirIfNotExists(SYSTEM_THEME_AUDIO_PATH);
     }
 
-    public static void createRingtoneDirIfNotExists() {
-        createDirIfNotExists(SYSTEM_THEME_RINGTONE_PATH);
-    }
-
-    public static void createNotificationDirIfNotExists() {
-        createDirIfNotExists(SYSTEM_THEME_NOTIFICATION_PATH);
-    }
-
-    public static void createAlarmDirIfNotExists() {
-        createDirIfNotExists(SYSTEM_THEME_ALARM_PATH);
-    }
-
-    public static void createUiSoundsDirIfNotExists() {
-        createDirIfNotExists(SYSTEM_THEME_UI_SOUNDS_PATH);
-    }
-
     public static void deleteThemedFonts() {
         try {
             deleteRecursive(new File(SYSTEM_THEME_FONT_PATH));

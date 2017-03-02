@@ -63,6 +63,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
@@ -114,6 +115,15 @@ public class JobService extends Service {
             MASQUERADE_PACKAGE,
             SUBSTRATUM_PACKAGE,
     };
+    private static List<Sound> SOUNDS = Arrays.asList(
+        new Sound(IOUtils.SYSTEM_THEME_UI_SOUNDS_PATH, "/SoundsCache/ui/", "Effect_Tick", "Effect_Tick", RingtoneManager.TYPE_RINGTONE),
+        new Sound(IOUtils.SYSTEM_THEME_UI_SOUNDS_PATH, "/SoundsCache/ui/", "lock_sound", "Lock"),
+        new Sound(IOUtils.SYSTEM_THEME_UI_SOUNDS_PATH, "/SoundsCache/ui/", "unlock_sound", "Unlock"),
+        new Sound(IOUtils.SYSTEM_THEME_UI_SOUNDS_PATH, "/SoundsCache/ui/", "low_battery_sound", "LowBattery"),
+        new Sound(IOUtils.SYSTEM_THEME_ALARM_PATH, "/SoundsCache/alarms/", "alarm", "alarm", RingtoneManager.TYPE_ALARM),
+        new Sound(IOUtils.SYSTEM_THEME_NOTIFICATION_PATH, "/SoundsCache/notifications/", "notification", "notification", RingtoneManager.TYPE_NOTIFICATION),
+        new Sound(IOUtils.SYSTEM_THEME_RINGTONE_PATH, "/SoundsCache/ringtones/", "ringtone", "ringtone", RingtoneManager.TYPE_RINGTONE)
+    );
     private static IOverlayManager mOMS;
     private static IPackageManager mPM;
     private final List<Runnable> mJobQueue = new ArrayList<>(0);
@@ -483,95 +493,23 @@ public class JobService extends Service {
         clearSounds(this);
         IOUtils.createAudioDirIfNotExists();
 
-        File uiSoundsCache = new File(getCacheDir(), "/SoundsCache/ui/");
-        if (uiSoundsCache.exists() && uiSoundsCache.isDirectory()) {
-            IOUtils.createUiSoundsDirIfNotExists();
+        for (Sound sound : SOUNDS) {
+            File soundsCache = new File(getCacheDir(), sound.cachePath);
 
-            File effect_tick_mp3 = new File(getCacheDir(), "/SoundsCache/ui/Effect_Tick.mp3");
-            File effect_tick_ogg = new File(getCacheDir(), "/SoundsCache/ui/Effect_Tick.ogg");
-            if (effect_tick_ogg.exists()) {
-                IOUtils.bufferedCopy(effect_tick_ogg, new File(IOUtils
-                        .SYSTEM_THEME_UI_SOUNDS_PATH + File.separator + "Effect_Tick.ogg"));
-            } else if (effect_tick_mp3.exists()) {
-                IOUtils.bufferedCopy(effect_tick_mp3, new File(IOUtils
-                        .SYSTEM_THEME_UI_SOUNDS_PATH + File.separator + "Effect_Tick.mp3"));
+            if (!(soundsCache.exists() && soundsCache.isDirectory())) {
+                continue;
             }
 
-            File new_lock_mp3 = new File(getCacheDir(), "/SoundsCache/ui/Lock.mp3");
-            File new_lock_ogg = new File(getCacheDir(), "/SoundsCache/ui/Lock.ogg");
-            if (new_lock_ogg.exists()) {
-                IOUtils.bufferedCopy(new_lock_ogg, new File(IOUtils.SYSTEM_THEME_UI_SOUNDS_PATH +
-                        File.separator + "Lock.ogg"));
-            } else if (new_lock_mp3.exists()) {
-                IOUtils.bufferedCopy(new_lock_mp3, new File(IOUtils.SYSTEM_THEME_UI_SOUNDS_PATH +
-                        File.separator + "Lock.mp3"));
-            }
+            IOUtils.createDirIfNotExists(sound.themePath);
 
-            File new_unlock_mp3 = new File(getCacheDir(), "/SoundsCache/ui/Unlock.mp3");
-            File new_unlock_ogg = new File(getCacheDir(), "/SoundsCache/ui/Unlock.ogg");
-            if (new_unlock_ogg.exists()) {
-                IOUtils.bufferedCopy(new_unlock_ogg, new File(IOUtils.SYSTEM_THEME_UI_SOUNDS_PATH
-                        + File.separator + "Unlock.ogg"));
-            } else if (new_unlock_mp3.exists()) {
-                IOUtils.bufferedCopy(new_unlock_mp3, new File(IOUtils.SYSTEM_THEME_UI_SOUNDS_PATH
-                        + File.separator + "Unlock.mp3"));
-            }
-
-            File new_lowbattery_mp3 = new File(getCacheDir(), "/SoundsCache/ui/LowBattery.mp3");
-            File new_lowbattery_ogg = new File(getCacheDir(), "/SoundsCache/ui/LowBattery.ogg");
-            if (new_lowbattery_ogg.exists()) {
-                IOUtils.bufferedCopy(new_lowbattery_ogg, new File(IOUtils
-                        .SYSTEM_THEME_UI_SOUNDS_PATH + File.separator + "LowBattery.ogg"));
-            } else if (new_lowbattery_mp3.exists()) {
-                IOUtils.bufferedCopy(new_lowbattery_mp3, new File(IOUtils
-                        .SYSTEM_THEME_UI_SOUNDS_PATH + File.separator + "LowBattery.mp3"));
-            }
-        }
-
-        File alarmCache = new File(getCacheDir(), "/SoundsCache/alarms/");
-        if (alarmCache.exists() && alarmCache.isDirectory()) {
-            IOUtils.createAlarmDirIfNotExists();
-
-            File new_alarm_mp3 = new File(getCacheDir(), "/SoundsCache/alarms/alarm.mp3");
-            File new_alarm_ogg = new File(getCacheDir(), "/SoundsCache/alarms/alarm.ogg");
-            if (new_alarm_ogg.exists()) {
-                IOUtils.bufferedCopy(new_alarm_ogg, new File(IOUtils.SYSTEM_THEME_ALARM_PATH +
-                        File.separator + "alarm.ogg"));
-            } else if (new_alarm_mp3.exists()) {
-                IOUtils.bufferedCopy(new_alarm_mp3, new File(IOUtils.SYSTEM_THEME_ALARM_PATH +
-                        File.separator + "alarm.mp3"));
-            }
-        }
-
-        File notifCache = new File(getCacheDir(), "/SoundsCache/notifications/");
-        if (notifCache.exists() && notifCache.isDirectory()) {
-            IOUtils.createNotificationDirIfNotExists();
-
-            File new_notif_mp3 = new File(getCacheDir(), "/SoundsCache/notifications/notification" +
-                    ".mp3");
-            File new_notif_ogg = new File(getCacheDir(), "/SoundsCache/notifications/notification" +
-                    ".ogg");
-            if (new_notif_ogg.exists()) {
-                IOUtils.bufferedCopy(new_notif_ogg, new File(IOUtils
-                        .SYSTEM_THEME_NOTIFICATION_PATH + File.separator + "notification.ogg"));
-            } else if (new_notif_mp3.exists()) {
-                IOUtils.bufferedCopy(new_notif_mp3, new File(IOUtils
-                        .SYSTEM_THEME_NOTIFICATION_PATH + File.separator + "notification.mp3"));
-            }
-        }
-
-        File ringtoneCache = new File(getCacheDir(), "/SoundsCache/ringtones/");
-        if (ringtoneCache.exists() && ringtoneCache.isDirectory()) {
-            IOUtils.createRingtoneDirIfNotExists();
-
-            File new_ring_mp3 = new File(getCacheDir(), "/SoundsCache/ringtones/ringtone.mp3");
-            File new_ring_ogg = new File(getCacheDir(), "/SoundsCache/ringtones/ringtone.ogg");
-            if (new_ring_ogg.exists()) {
-                IOUtils.bufferedCopy(new_ring_ogg, new File(IOUtils.SYSTEM_THEME_RINGTONE_PATH +
-                        File.separator + "ringtone.ogg"));
-            } else if (new_ring_mp3.exists()) {
-                IOUtils.bufferedCopy(new_ring_mp3, new File(IOUtils.SYSTEM_THEME_RINGTONE_PATH +
-                        File.separator + "ringtone.mp3"));
+            File mp3 = new File(getCacheDir(), sound.cachePath + sound.soundPath + ".mp3");
+            File ogg = new File(getCacheDir(), sound.cachePath + sound.soundPath + ".ogg");
+            if (ogg.exists()) {
+                IOUtils.bufferedCopy(ogg,
+                        new File(sound.themePath + File.separator + sound.soundPath + ".ogg"));
+            } else if (mp3.exists()) {
+                IOUtils.bufferedCopy(mp3,
+                        new File(sound.themePath + File.separator + sound.soundPath + ".mp3"));
             }
         }
 
@@ -592,115 +530,51 @@ public class JobService extends Service {
 
     private void refreshSounds() {
         File soundsDir = new File(IOUtils.SYSTEM_THEME_AUDIO_PATH);
-        if (soundsDir.exists()) {
-            // Set permissions
-            IOUtils.setPermissionsRecursive(soundsDir,
-                    FileUtils.S_IRWXU | FileUtils.S_IRGRP | FileUtils.S_IRWXO,
-                    FileUtils.S_IRWXU | FileUtils.S_IRWXG | FileUtils.S_IROTH | FileUtils.S_IXOTH);
 
-            File uiDir = new File(IOUtils.SYSTEM_THEME_UI_SOUNDS_PATH);
-            if (uiDir.exists()) {
-                File effect_tick_mp3 = new File(uiDir, "Effect_Tick.mp3");
-                File effect_tick_ogg = new File(uiDir, "Effect_Tick.ogg");
-                if (effect_tick_mp3.exists()) {
-                    SoundUtils.setUIAudible(this, effect_tick_mp3,
-                            effect_tick_mp3, RingtoneManager.TYPE_RINGTONE,
-                            "Effect_Tick");
-                } else if (effect_tick_ogg.exists()) {
-                    SoundUtils.setUIAudible(this, effect_tick_ogg,
-                            effect_tick_ogg, RingtoneManager.TYPE_RINGTONE,
-                            "Effect_Tick");
-                } else {
-                    SoundUtils.setDefaultUISounds(getContentResolver(),
-                            "Effect_Tick",
-                            "Effect_Tick.ogg");
-                }
+        if (!soundsDir.exists()) {
+            return;
+        }
 
-                File lock_mp3 = new File(uiDir, "Lock.mp3");
-                File lock_ogg = new File(uiDir, "Lock.ogg");
-                if (lock_mp3.exists()) {
-                    SoundUtils.setUISounds(getContentResolver(), "lock_sound",
-                            lock_mp3.getAbsolutePath());
-                } else if (lock_ogg.exists()) {
-                    SoundUtils.setUISounds(getContentResolver(), "lock_sound",
-                            lock_ogg.getAbsolutePath());
-                } else {
-                    SoundUtils.setDefaultUISounds(getContentResolver(),
-                            "lock_sound", "Lock.ogg");
-                }
+        // Set permissions
+        IOUtils.setPermissionsRecursive(soundsDir,
+                FileUtils.S_IRWXU | FileUtils.S_IRGRP | FileUtils.S_IRWXO,
+                FileUtils.S_IRWXU | FileUtils.S_IRWXG | FileUtils.S_IROTH | FileUtils.S_IXOTH);
 
-                File unlock_mp3 = new File(uiDir, "Unlock.mp3");
-                File unlock_ogg = new File(uiDir, "Unlock.ogg");
-                if (unlock_mp3.exists()) {
-                    SoundUtils.setUISounds(getContentResolver(), "unlock_sound",
-                            unlock_mp3.getAbsolutePath());
-                } else if (unlock_ogg.exists()) {
-                    SoundUtils.setUISounds(getContentResolver(), "unlock_sound",
-                            unlock_ogg.getAbsolutePath());
-                } else {
-                    SoundUtils.setDefaultUISounds(getContentResolver(),
-                            "unlock_sound", "Unlock.ogg");
-                }
+        int metaDataId = getSubsContext().getResources().getIdentifier(
+                "content_resolver_notification_metadata",
+                "string", SUBSTRATUM_PACKAGE);
 
-                File lowbattery_mp3 = new File(uiDir, "LowBattery.mp3");
-                File lowbattery_ogg = new File(uiDir, "LowBattery.ogg");
-                if (lowbattery_mp3.exists()) {
-                    SoundUtils.setUISounds(getContentResolver(), "low_battery_sound",
-                            lowbattery_mp3.getAbsolutePath());
-                } else if (lowbattery_ogg.exists()) {
-                    SoundUtils.setUISounds(getContentResolver(), "low_battery_sound",
-                            lowbattery_ogg.getAbsolutePath());
-                } else {
-                    SoundUtils.setDefaultUISounds(getContentResolver(),
-                            "low_battery_sound", "LowBattery.ogg");
-                }
+        for (Sound sound : SOUNDS) {
+            File themePath = new File(sound.themePath);
+
+            if (!(themePath.exists() && themePath.isDirectory())) {
+                continue;
             }
 
-            File notifDir = new File(IOUtils.SYSTEM_THEME_NOTIFICATION_PATH);
-            if (notifDir.exists()) {
-                int metaDataId = getSubsContext().getResources().getIdentifier(
-                        "content_resolver_notification_metadata",
-                        "string", SUBSTRATUM_PACKAGE);
+            File mp3 = new File(themePath, sound.soundPath + ".mp3");
+            File ogg = new File(themePath, sound.soundPath + ".ogg");
 
-                File notification_mp3 = new File(notifDir, "notification.mp3");
-                File notification_ogg = new File(notifDir, "notification.ogg");
-                if (notification_mp3.exists()) {
-                    SoundUtils.setAudible(this, notification_mp3,
-                            notification_mp3,
-                            RingtoneManager.TYPE_NOTIFICATION,
-                            getSubsContext().getString(metaDataId));
-                } else if (notification_ogg.exists()) {
-                    SoundUtils.setAudible(this, notification_ogg,
-                            notification_ogg,
-                            RingtoneManager.TYPE_NOTIFICATION,
-                            getSubsContext().getString(metaDataId));
+            if (ogg.exists()) {
+                if (sound.themePath.equals(IOUtils.SYSTEM_THEME_UI_SOUNDS_PATH) && sound.type != 0) {
+                    SoundUtils.setUIAudible(this, ogg, ogg, sound.type, sound.soundName);
+                } else if (sound.themePath.equals(IOUtils.SYSTEM_THEME_UI_SOUNDS_PATH)) {
+                    SoundUtils.setUISounds(getContentResolver(), sound.soundName, ogg.getAbsolutePath());
                 } else {
-                    SoundUtils.setDefaultAudible(this,
-                            RingtoneManager.TYPE_NOTIFICATION);
+                    SoundUtils.setAudible(this, ogg, ogg, sound.type, getSubsContext().getString(metaDataId));
                 }
-            }
-
-            File ringtoneDir = new File(IOUtils.SYSTEM_THEME_RINGTONE_PATH);
-            if (ringtoneDir.exists()) {
-                int metaDataId = getSubsContext().getResources().getIdentifier(
-                        "content_resolver_notification_metadata",
-                        "string", SUBSTRATUM_PACKAGE);
-
-                File ringtone_mp3 = new File(ringtoneDir, "ringtone.mp3");
-                File ringtone_ogg = new File(ringtoneDir, "ringtone.ogg");
-                if (ringtone_mp3.exists()) {
-                    SoundUtils.setAudible(this, ringtone_mp3,
-                            ringtone_mp3,
-                            RingtoneManager.TYPE_RINGTONE,
-                            getSubsContext().getString(metaDataId));
-                } else if (ringtone_ogg.exists()) {
-                    SoundUtils.setAudible(this, ringtone_ogg,
-                            ringtone_ogg,
-                            RingtoneManager.TYPE_RINGTONE,
-                            getSubsContext().getString(metaDataId));
+            } else if (mp3.exists()) {
+                if (sound.themePath.equals(IOUtils.SYSTEM_THEME_UI_SOUNDS_PATH) && sound.type != 0) {
+                    SoundUtils.setUIAudible(this, mp3, mp3, sound.type, sound.soundName);
+                } else if (sound.themePath.equals(IOUtils.SYSTEM_THEME_UI_SOUNDS_PATH)) {
+                    SoundUtils.setUISounds(getContentResolver(), sound.soundName, mp3.getAbsolutePath());
                 } else {
-                    SoundUtils.setDefaultAudible(this,
-                            RingtoneManager.TYPE_RINGTONE);
+                    SoundUtils.setAudible(this, mp3, mp3, sound.type, getSubsContext().getString(metaDataId));
+                }
+            } else {
+                if (sound.themePath.equals(IOUtils.SYSTEM_THEME_UI_SOUNDS_PATH)) {
+                    SoundUtils.setDefaultUISounds(getContentResolver(), sound.soundName, sound.soundPath + ".ogg");
+                } else {
+                    SoundUtils.setDefaultAudible(this, sound.type);
                 }
             }
         }
@@ -928,6 +802,29 @@ public class JobService extends Service {
             Message message = mJobHandler.obtainMessage(JobHandler.MESSAGE_DEQUEUE,
                     FontsJob.this);
             mJobHandler.sendMessage(message);
+        }
+    }
+
+    private static class Sound {
+        String themePath;
+        String cachePath;
+        String soundName;
+        String soundPath;
+        int type;
+
+        Sound(String themePath, String cachePath, String soundName, String soundPath) {
+            this.themePath = themePath;
+            this.cachePath = cachePath;
+            this.soundName = soundName;
+            this.soundPath = soundPath;
+        }
+
+        Sound(String themePath, String cachePath, String soundName, String soundPath, int type) {
+            this.themePath = themePath;
+            this.cachePath = cachePath;
+            this.soundName = soundName;
+            this.soundPath = soundPath;
+            this.type = type;
         }
     }
 
