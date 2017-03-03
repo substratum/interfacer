@@ -23,6 +23,8 @@
         tools:ignore="ProtectedPermissions"/>
     <uses-permission android:name="android.permission.INSTALL_GRANT_RUNTIME_PERMISSIONS"/>
     <uses-permission android:name="android.permission.MODIFY_OVERLAYS"/>
+    <protected-broadcast android:name="masquerade.substratum.STATUS_CHANGED" />
+    <protected-broadcast android:name="masquerade.substratum.CALLER_AUTHORIZED" />
 
     <application
         android:allowBackup="false"
