@@ -18,7 +18,7 @@
  *
  */
 
-package masquerade.substratum.utils;
+package projekt.interfacer.utils;
 
 import android.content.ContentResolver;
 import android.content.ContentValues;

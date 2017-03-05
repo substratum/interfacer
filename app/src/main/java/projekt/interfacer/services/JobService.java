@@ -18,7 +18,7 @@
  *
  */
 
-package masquerade.substratum.services;
+package projekt.interfacer.services;
 
 import android.app.ActivityManager;
 import android.app.ActivityManagerNative;
@@ -71,11 +71,11 @@ import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
 
-import masquerade.substratum.utils.IOUtils;
-import masquerade.substratum.utils.SoundUtils;
+import projekt.interfacer.utils.IOUtils;
+import projekt.interfacer.utils.SoundUtils;
 
 public class JobService extends Service {
-    public static final String INTENT_STATUS_CHANGED = "masquerade.substratum.STATUS_CHANGED";
+    public static final String INTENT_STATUS_CHANGED = "projekt.interfacer.STATUS_CHANGED";
     public static final String PRIMARY_COMMAND_KEY = "primary_command_key";
     public static final String JOB_TIME_KEY = "job_time_key";
     public static final String INSTALL_LIST_KEY = "install_list";
@@ -112,11 +112,11 @@ public class JobService extends Service {
     public static final String COMMAND_VALUE_MKDIR = "mkdir";
     private static final String TAG = JobService.class.getSimpleName();
     private static final boolean DEBUG = true;
-    private static final String MASQUERADE_TOKEN = "masquerade_token";
-    private static final String MASQUERADE_PACKAGE = "masquerade.substratum";
+    private static final String INTERFACER_TOKEN = "interfacer_token";
+    private static final String INTERFACER_PACKAGE = "projekt.interfacer";
     private static final String SUBSTRATUM_PACKAGE = "projekt.substratum";
     private static final String[] AUTHORIZED_CALLERS = new String[]{
-            MASQUERADE_PACKAGE,
+            INTERFACER_PACKAGE,
             SUBSTRATUM_PACKAGE,
     };
     private static List<Sound> SOUNDS = Arrays.asList(
@@ -128,7 +128,7 @@ public class JobService extends Service {
         new Sound(IOUtils.SYSTEM_THEME_NOTIFICATION_PATH, "/SoundsCache/notifications/", "notification", "notification", RingtoneManager.TYPE_NOTIFICATION),
         new Sound(IOUtils.SYSTEM_THEME_RINGTONE_PATH, "/SoundsCache/ringtones/", "ringtone", "ringtone", RingtoneManager.TYPE_RINGTONE)
     );
-    private static final String INTENT_CALLER_AUTHORIZED = "masquerade.substratum.CALLER_AUTHORIZED";
+    private static final String INTENT_CALLER_AUTHORIZED = "projekt.interfacer.CALLER_AUTHORIZED";
     private static IOverlayManager mOMS;
     private static IPackageManager mPM;
     private final List<Runnable> mJobQueue = new ArrayList<>(0);
@@ -686,7 +686,7 @@ public class JobService extends Service {
     }
 
     private static boolean shouldCheckBuildType() {
-        return SystemProperties.getBoolean("ro.masquerade.buildtype.check", false);
+        return SystemProperties.getBoolean("ro.interfacer.buildtype.check", false);
     }
 
     private boolean forceAuthorizePackages() {
@@ -715,7 +715,7 @@ public class JobService extends Service {
         PendingIntent token = null;
 
         try {
-            token = intent.getParcelableExtra(MASQUERADE_TOKEN);
+            token = intent.getParcelableExtra(INTERFACER_TOKEN);
         } catch (Exception e) {
             log("Attempting to start service without a token - unauthorized!");
         }

@@ -1,11 +1,11 @@
 #
-# Inline AOSP Makefile for Masquerade
+# Inline AOSP Makefile for Projekt's ThemeInterfacer
 #
 LOCAL_PATH:= $(call my-dir)
 
 include $(CLEAR_VARS)
 
-LOCAL_PACKAGE_NAME := masquerade
+LOCAL_PACKAGE_NAME := ThemeInterfacer
 LOCAL_CERTIFICATE := platform
 LOCAL_PRIVILEGED_MODULE := true
 LOCAL_PROGUARD_ENABLED := disabled

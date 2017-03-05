@@ -2,10 +2,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
           xmlns:tools="http://schemas.android.com/tools"
           coreApp="true"
-          package="masquerade.substratum"
+          package="projekt.interfacer"
           android:sharedUserId="android.uid.system"
-          android:versionCode="24"
-          android:versionName="twenty four"
+          android:versionCode="50"
+          android:versionName="fifty"
           tools:ignore="GradleOverrides">
 
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
@@ -23,13 +23,14 @@
         tools:ignore="ProtectedPermissions"/>
     <uses-permission android:name="android.permission.INSTALL_GRANT_RUNTIME_PERMISSIONS"/>
     <uses-permission android:name="android.permission.MODIFY_OVERLAYS"/>
-    <protected-broadcast android:name="masquerade.substratum.STATUS_CHANGED" />
-    <protected-broadcast android:name="masquerade.substratum.CALLER_AUTHORIZED" />
+    <protected-broadcast android:name="projekt.interfacer.STATUS_CHANGED" />
+    <protected-broadcast android:name="projekt.interfacer.CALLER_AUTHORIZED" />
 
     <application
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
-        android:label="masquerade"
+        android:label="Theme Interfacer"
+        android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@android:style/Theme.NoDisplay"
         tools:ignore="GoogleAppIndexingWarning">

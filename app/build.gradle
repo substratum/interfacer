@@ -12,12 +12,12 @@ android {
     applicationVariants.all { variant ->
         variant.outputs.each { output ->
             output.outputFile = new File(
-                    output.outputFile.parent, "masquerade_" + versionCode + ".apk")
+                    output.outputFile.parent, "themeinterfacer_" + versionCode + ".apk")
         }
     }
 
     defaultConfig {
-        applicationId "masquerade.substratum"
+        applicationId "projekt.interfacer"
         minSdkVersion 25
         targetSdkVersion 25
     }

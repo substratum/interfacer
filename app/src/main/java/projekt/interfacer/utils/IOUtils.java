@@ -18,7 +18,7 @@
  *
  */
 
-package masquerade.substratum.utils;
+package projekt.interfacer.utils;
 
 import android.os.FileUtils;
 import android.util.Log;
