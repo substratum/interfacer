@@ -220,7 +220,8 @@ public class JobService extends Service {
         } else if (TextUtils.equals(command, COMMAND_VALUE_RESTART_UI)) {
             jobs_to_add.add(new UiResetJob());
         } else if (TextUtils.equals(command, COMMAND_VALUE_RESTART_SERVICE)) {
-            jobs_to_add.add(new RestartServiceJob());
+            log("Restarting JobService...");
+            restartService();
         } else if (TextUtils.equals(command, COMMAND_VALUE_CONFIGURATION_SHIM)) {
             jobs_to_add.add(new LocaleChanger(getApplicationContext(), mMainHandler));
         } else if (TextUtils.equals(command, COMMAND_VALUE_BOOTANIMATION)) {
@@ -838,17 +839,6 @@ public class JobService extends Service {
             Message message = mJobHandler.obtainMessage(JobHandler.MESSAGE_DEQUEUE,
                     UiResetJob.this);
             mJobHandler.sendMessage(message);
-        }
-    }
-
-    private class RestartServiceJob implements Runnable {
-        @Override
-        public void run() {
-            log("Restarting JobService...");
-            Message message = mJobHandler.obtainMessage(JobHandler.MESSAGE_DEQUEUE,
-                    RestartServiceJob.this);
-            mJobHandler.sendMessage(message);
-            restartService();
         }
     }
 
