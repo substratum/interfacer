@@ -160,8 +160,8 @@ public class JobService extends Service {
         if (!DEBUG) {
             return;
         }
-
-        Log.e(TAG, msg);
+        // More -Wall than -Werror like
+        Log.d(TAG, msg);
     }
 
     @Override
@@ -171,6 +171,9 @@ public class JobService extends Service {
         mWorker.start();
         mJobHandler = new JobHandler(mWorker.getLooper());
         mMainHandler = new MainHandler(Looper.getMainLooper());
+
+        // Needed here before any checks
+        IOUtils.createThemeDirIfNotExists();
     }
 
     @Override
@@ -599,7 +602,6 @@ public class JobService extends Service {
     }
 
     private void copyBootAnimation(String fileName) {
-        IOUtils.createThemeDirIfNotExists();
 
         try {
             clearBootAnimation();
