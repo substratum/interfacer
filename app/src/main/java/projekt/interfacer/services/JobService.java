@@ -463,10 +463,10 @@ public class JobService extends Service {
         // Let system know it's time for a font change
         SystemProperties.set("sys.refresh_theme", "1");
         Typeface.recreateDefaults();
-        float fontSize = Float.valueOf(Settings.System.getString(
-                getContentResolver(), Settings.System.FONT_SCALE));
-        Settings.System.putString(getContentResolver(),
-                Settings.System.FONT_SCALE, String.valueOf(fontSize + 0.0000001));
+        float fontSize = Settings.System.getFloatForUser(getContentResolver(),
+                                 Settings.System.FONT_SCALE, 1.0f, UserHandle.USER_CURRENT);
+        Settings.System.putFloatForUser(getContentResolver(),
+                Settings.System.FONT_SCALE, (fontSize + 0.0000001f), UserHandle.USER_CURRENT);
     }
 
     private void applyThemedSounds(String pid, String zipFileName) {
