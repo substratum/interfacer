@@ -323,7 +323,11 @@ public class JobService extends Service {
     @Override
     public void onDestroy() {
        if (mShouldRestartService) {
-           startService(new Intent(this, JobService.class));
+           Intent intent = new Intent(this, JobService.class);
+           PendingIntent pending = PendingIntent.getActivity(this, 0, new Intent(), 0);
+           intent.putExtra(INTERFACER_TOKEN, pending);
+           intent.putExtra(JOB_TIME_KEY, System.currentTimeMillis());
+           startService(intent);
        }
     }
 
