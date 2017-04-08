@@ -12,7 +12,7 @@ LOCAL_PROGUARD_ENABLED := disabled
 LOCAL_MODULE_TAGS := optional
 
 LOCAL_MANIFEST_FILE := app/src/main/AndroidManifest.xml
-LOCAL_SRC_FILES := $(call all-java-files-under, app/src/main)
+LOCAL_SRC_FILES := $(call all-java-files-under, app/src/main) $(call all-Iaidl-files-under, app/src/main)
 LOCAL_REQUIRED_MODULES := projekt.substratum.theme.xml
 LOCAL_RESOURCE_DIR := $(LOCAL_PATH)/app/src/main/res
 

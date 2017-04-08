@@ -4,8 +4,8 @@
           coreApp="true"
           package="projekt.interfacer"
           android:sharedUserId="android.uid.system"
-          android:versionCode="56"
-          android:versionName="fifty six"
+          android:versionCode="60"
+          android:versionName="sixty"
           tools:ignore="GradleOverrides">
 
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
@@ -37,6 +37,10 @@
         <service
             android:name=".services.JobService"
             android:exported="true"
-            android:permission="android.permission.MODIFY_OVERLAYS"/>
+            android:permission="android.permission.MODIFY_OVERLAYS">
+            <intent-filter>
+                <action android:name="projekt.interfacer.INITIALIZE" />
+            </intent-filter>
+        </service>
     </application>
 </manifest>

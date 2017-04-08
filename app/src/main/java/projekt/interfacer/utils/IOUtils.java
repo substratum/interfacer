@@ -33,7 +33,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 public class IOUtils {
-    private static final String TAG = IOUtils.class.getSimpleName();
     public static final String SYSTEM_THEME_PATH = "/data/system/theme";
     public static final String SYSTEM_THEME_FONT_PATH = SYSTEM_THEME_PATH + File.separator
             + "fonts";
@@ -49,6 +48,7 @@ public class IOUtils {
             + File.separator + "ui";
     public static final String SYSTEM_THEME_BOOTANIMATION_PATH = SYSTEM_THEME_PATH + File.separator
             + "bootanimation.zip";
+    private static final String TAG = IOUtils.class.getSimpleName();
 
     private static boolean dirExists(String dirPath) {
         final File dir = new File(dirPath);
