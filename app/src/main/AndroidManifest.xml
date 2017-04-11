@@ -4,8 +4,8 @@
           coreApp="true"
           package="projekt.interfacer"
           android:sharedUserId="android.uid.system"
-          android:versionCode="50"
-          android:versionName="fifty"
+          android:versionCode="56"
+          android:versionName="fifty six"
           tools:ignore="GradleOverrides">
 
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>

@@ -95,7 +95,7 @@ public class JobService extends Service {
     public static final String COMMAND_VALUE_INSTALL = "install";
     public static final String COMMAND_VALUE_UNINSTALL = "uninstall";
     public static final String COMMAND_VALUE_RESTART_UI = "restart_ui";
-    public static final String COMMAND_VALUE_RESTART_SERVICE = "restart_service";
+    public static final String COMMAND_VALUE_FORCE_STOP_SERVICE = "force_stop_service";
     public static final String COMMAND_VALUE_CONFIGURATION_SHIM = "configuration_shim";
     public static final String COMMAND_VALUE_BOOTANIMATION = "bootanimation";
     public static final String COMMAND_VALUE_FONTS = "fonts";
@@ -134,7 +134,6 @@ public class JobService extends Service {
     private MainHandler mMainHandler;
     private long mLastJobTime;
     private boolean mIsRunning;
-    private boolean mShouldRestartService;
 
     private static IOverlayManager getOMS() {
         if (mOMS == null) {
@@ -220,9 +219,9 @@ public class JobService extends Service {
             }
         } else if (TextUtils.equals(command, COMMAND_VALUE_RESTART_UI)) {
             jobs_to_add.add(new UiResetJob());
-        } else if (TextUtils.equals(command, COMMAND_VALUE_RESTART_SERVICE)) {
-            log("Restarting JobService...");
-            restartService();
+        } else if (TextUtils.equals(command, COMMAND_VALUE_FORCE_STOP_SERVICE)) {
+            log("Force stopping JobService...");
+            forceStopService();
         } else if (TextUtils.equals(command, COMMAND_VALUE_CONFIGURATION_SHIM)) {
             jobs_to_add.add(new LocaleChanger(getApplicationContext(), mMainHandler));
         } else if (TextUtils.equals(command, COMMAND_VALUE_BOOTANIMATION)) {
@@ -316,17 +315,6 @@ public class JobService extends Service {
     @Override
     public IBinder onBind(Intent intent) {
         return null;
-    }
-
-    @Override
-    public void onDestroy() {
-       if (mShouldRestartService) {
-           Intent intent = new Intent(this, JobService.class);
-           PendingIntent pending = PendingIntent.getActivity(this, 0, new Intent(), 0);
-           intent.putExtra(INTERFACER_TOKEN, pending);
-           intent.putExtra(JOB_TIME_KEY, System.currentTimeMillis());
-           startService(intent);
-       }
     }
 
     private boolean isProcessing() {
@@ -664,8 +652,7 @@ public class JobService extends Service {
         }
     }
 
-    private void restartService() {
-        mShouldRestartService = true;
+    private void forceStopService() {
         stopService(new Intent(this, JobService.class));
     }
 
