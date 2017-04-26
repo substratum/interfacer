@@ -15,4 +15,4 @@ Add "ThemeInterfacer" in your PRODUCT_PACKAGES
 
 Don't forget to add the project path in your AOSP manifest:
 
-    <project path="packages/apps/ThemeInterfacer" name="substratum/interfacer" remote="github" revision="n-rootless" />
+    <project path="packages/services/ThemeInterfacer" name="substratum/interfacer" remote="github" revision="n-rootless" />
