@@ -171,11 +171,11 @@ public class JobService extends Service {
         }
 
         @Override
-        public void configurationShim() {
+        public void configurationShim(int firstDelay, int secondDelay) {
             // Verify caller identity
             if (!isCallerAuthorized(Binder.getCallingUid())) return;
 
-            new LocaleChanger(getSubsContext()).run();
+            new LocaleChanger(getSubsContext(), firstDelay, secondDelay).run();
         }
 
         @Override
@@ -946,10 +946,13 @@ public class JobService extends Service {
         private Context mContext;
         private Handler mHandler;
         private Locale mCurrentLocale;
+        private int mFirstDelay, mSecondDelay;
 
-        public LocaleChanger(Context context) {
+        public LocaleChanger(Context context, int firstDelay, int secondDelay) {
             mContext = context;
             mHandler = new Handler(Looper.getMainLooper());
+            mFirstDelay = firstDelay;
+            mSecondDelay = secondDelay;
         }
 
         @Override
@@ -958,7 +961,7 @@ public class JobService extends Service {
             i.addCategory(Intent.CATEGORY_HOME);
 
             mContext.startActivity(i);
-            mHandler.postDelayed(this::spoofLocale, 500);
+            mHandler.postDelayed(this::spoofLocale, mFirstDelay);
         }
 
         private void register() {
@@ -1028,7 +1031,7 @@ public class JobService extends Service {
 
         @Override
         public void onReceive(Context context, Intent intent) {
-            mHandler.postDelayed(this::restoreLocale, 500);
+            mHandler.postDelayed(this::restoreLocale, mSecondDelay);
         }
     }
 }
