@@ -46,6 +46,7 @@ import android.os.Environment;
 import android.os.FileUtils;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.os.RemoteException;
 import android.os.ServiceManager;
 import android.os.SystemProperties;
@@ -948,7 +949,7 @@ public class JobService extends Service {
 
         public LocaleChanger(Context context) {
             mContext = context;
-            mHandler = new Handler();
+            mHandler = new Handler(Looper.getMainLooper());
         }
 
         @Override
