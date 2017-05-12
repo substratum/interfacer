@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name" translatable="false">Theme Interfacer</string>
+    <string name="perm_group_label">Theme Interfacer</string>
+    <string name="perm_group_desc">Allows access to the Theme Interfacer service</string>
+    <string name="perm_access_label">Access Theme Interfacer</string>
+</resources>
+
