@@ -70,6 +70,7 @@ import projekt.substratum.IInterfacerInterface;
 
 public class JobService extends Service {
     private static final String TAG = JobService.class.getSimpleName();
+    private static final int BASE_API_VERSION = 1;
     private static final boolean DEBUG = true;
     private static final String INTENT_STATUS_CHANGED = "projekt.interfacer.STATUS_CHANGED";
     private static final String PRIMARY_COMMAND_KEY = "primary_command_key";
@@ -399,6 +400,17 @@ public class JobService extends Service {
             }
             informCompletion(COMMAND_VALUE_JOB_COMPLETE);
         }
+
+        @Override
+        public int getVersion() {
+            return BASE_API_VERSION;
+        }
+
+        @Override
+        public boolean isAuthorised() {
+            return isCallerAuthorized(Binder.getCallingUid());
+        }
+
     };
 
     private static IOverlayManager getOMS() {

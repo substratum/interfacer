@@ -134,4 +134,19 @@ interface IInterfacerInterface {
      */
     void applyProfile(in List<String> enable, in List<String> disable, String name,
             boolean restartUi);
+
+    /**
+     * Get API Version
+     *
+     * @return           Interface API version
+     */
+    int getVersion();
+
+
+    /**
+     * Is caller authorised for API calls
+     *
+     * @return           Flag indicates if caller is authorised
+     */
+    boolean isAuthorised();
 }
