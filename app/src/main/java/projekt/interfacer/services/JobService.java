@@ -37,8 +37,10 @@ import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.pm.Signature;
 import android.content.res.AssetManager;
 import android.content.res.Configuration;
+import android.database.ContentObserver;
 import android.graphics.Typeface;
 import android.media.RingtoneManager;
+import android.net.Uri;
 import android.os.Binder;
 import android.os.Build;
 import android.os.Bundle;
@@ -124,9 +126,29 @@ public class JobService extends Service {
             new Sound(IOUtils.SYSTEM_THEME_RINGTONE_PATH, "/SoundsCache/ringtones/", "ringtone",
                     "ringtone", RingtoneManager.TYPE_RINGTONE)
     );
+
+    private class MyObserver extends ContentObserver {
+
+        public MyObserver(Handler handler) {
+            super(handler);
+        }
+
+        @Override
+        public void onChange(boolean selfChange, Uri uri) {
+            synchronized (mLock) {
+                mSigOverride = Settings.Secure.getIntForUser(getSubsContext().getContentResolver(),
+                        Settings.Secure.FORCE_AUTHORIZE_SUBSTRATUM_PACKAGES, 0,
+                        UserHandle.USER_CURRENT) == 1;
+            }
+        }
+    };
+
     private static IOverlayManager mOMS;
     private static IPackageManager mPM;
     private static boolean isWaiting = false;
+    private final Object mLock = new Object();
+    private boolean mSigOverride;
+    private MyObserver mObserver = new MyObserver(new Handler());
     private final IInterfacerInterface.Stub mBinder = new IInterfacerInterface.Stub() {
         @Override
         public void installPackage(List<String> paths) {
@@ -451,6 +473,13 @@ public class JobService extends Service {
     public void onCreate() {
         // Needed here before any checks
         IOUtils.createThemeDirIfNotExists();
+        mSigOverride = Settings.Secure.getIntForUser(getSubsContext().getContentResolver(),
+                        Settings.Secure.FORCE_AUTHORIZE_SUBSTRATUM_PACKAGES, 0,
+                        UserHandle.USER_CURRENT) == 1;
+
+        getContentResolver().registerContentObserver(Settings.Secure.getUriFor(
+                Settings.Secure.FORCE_AUTHORIZE_SUBSTRATUM_PACKAGES), false, mObserver,
+                UserHandle.USER_ALL);
     }
 
     @Override
@@ -836,12 +865,6 @@ public class JobService extends Service {
         return ctx;
     }
 
-    private boolean forceAuthorizePackages() {
-        return Settings.Secure.getIntForUser(getContentResolver(),
-                Settings.Secure.FORCE_AUTHORIZE_SUBSTRATUM_PACKAGES, 0, UserHandle.USER_CURRENT)
-                == 1;
-    }
-
     private boolean doSignaturesMatch(String packageName, Signature signature) {
         if (packageName != null) {
             try {
@@ -881,7 +904,7 @@ public class JobService extends Service {
             return true;
         }
 
-        if (forceAuthorizePackages()) {
+        if (mSigOverride) {
             log("\'" + callingPackage + "\' is not an authorized calling " +
                     "package, but the user has explicitly allowed all calling" +
                     " packages, validating calling package permissions...");
